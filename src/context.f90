@@ -15,14 +15,15 @@ contains
         type(point_t)     :: p              !! 粒子
 
         integer :: i
+        logical :: bool
 
         boundary = rectangle_t(100.0, 100.0, 200.0, 200.0)
         call qt%constructor(boundary, 4)
 
         !> 布置粒子：随机位置
-        do i = 1, 6
-            p = point_t(randu(start=100.0, end=200.0), randu(start=100.0, end=200.0))
-            print *, qt%insert(p, "0")
+        do i = 1, 36
+            p    = point_t(randu(start=0.0, end=200.0), randu(start=0.0, end=200.0))
+            bool = qt%insert(p, "0")
         end do
 
         call qt%show(1)

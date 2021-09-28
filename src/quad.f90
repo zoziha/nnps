@@ -55,10 +55,10 @@ contains
 
         integer :: i
 
-        done = .false.
-        self%code = self%code//code
+        done      = .false.
+        self%code = code
 
-        !> 判断粒子是否处于矩阵内部
+        !> 判断粒子是否处于矩形内部
         if (.not.self%boundary%contains(point)) then
             return
         end if
@@ -79,7 +79,6 @@ contains
                 allocate( self%children(4) )
 
                 call self%subdivide()
-                self%divided = .true.
 
             end if
 
@@ -87,7 +86,7 @@ contains
             !> 在下属节点依次尝试插入粒子
             do i = 1, size(self%children)
 
-                if (self%children(i)%insert(point, self%code//to_string(i))) then
+                if (self%children(i)%insert(point, self%code//to_string(i) )) then
                     done = .true.
                     exit
                 end if
@@ -135,21 +134,17 @@ contains
 
         integer :: i
 
-        write(*, "(A,1x,A)", advance="no") repeat(" ", indent), self%code
+        do i = 1, size(self%points)
+            if (allocated(self%points)) then
+                write(*, "(A,1x,A)", advance="no") repeat("·", indent), self%code
+                write(*, "(2(2x,f6.2))") self%points(i)%x, self%points(i)%y
+            end if
+        end do
 
         if (allocated(self%children)) then
 
-            write(*, *)
             do i = 1, size(self%children)
-                call self%children(i)%show(indent)
-            end do
-
-        else
-
-            do i = 1, size(self%points)
-                if (allocated(self%points)) then
-                    write(*, "(2(2x,f6.2))") self%points(i)%x, self%points(i)%y
-                end if
+                call self%children(i)%show(indent+1)
             end do
 
         end if
