@@ -1,7 +1,7 @@
 !> 四叉树建模
 module quad
 
-    use utils, only: rectangle_t, point_t
+    use utils, only: rectangle_t, point_t, circle_t
     use stdlib_strings, only: to_string
     implicit none
     
@@ -22,6 +22,9 @@ module quad
         procedure :: insert
         procedure :: subdivide
         procedure :: show
+
+        generic   :: query => circle_t_query, rectangle_t_query
+        procedure :: circle_t_query, rectangle_t_query
         procedure :: delete_tree
 
     end type quad_tree_t
@@ -159,32 +162,58 @@ contains
 
     end subroutine delete_tree
 
-    !> 粒子查询操作
-    ! subroutine query(self, range)
+    !> 粒子查询操作(矩形)
+    recursive subroutine rectangle_t_query(self, range, found)
 
-    !     class(quad_tree_t), intent(inout) :: self
-    !     type(rectangle_t), intent(in) :: range
+        class(quad_tree_t), intent(inout) :: self
+        type(rectangle_t), intent(in) :: range
+        type(point_t), intent(inout), allocatable :: found(:)
 
-    !     if (.not. self%boundary%intersects(range)) then
-            
-    !     else
-    !         associate(p => self%points)
-    !             do i = 1, size(p)
-    !                 if (range%contains(p(i))) then
-    !                     found%push(p(i))
-    !                 end if
-    !             end do
-    !         end associate
+        integer :: i
 
-    !         if (self%divided) then
-    !             if (any(self%children(:)%query(range))) then
+        if (.not.allocated(found)) allocate(found(0))
 
-    !             end if
-    !         end if
+        if (.not. range%intersects(self%boundary)) then
+            return 
+        end if
         
-    !     end if
-        
+        do i = 1, size(self%points)
+            if (range%contains(self%points(i))) found = [found, self%points(i)]
+        end do
 
-    ! end subroutine query
+        if (self%divided) then
+            do i = 1, size(self%children)
+                call self%children(i)%query(range, found)
+            end do
+        end if
+
+    end subroutine rectangle_t_query
+
+    !> 粒子查询操作(圆形)
+    recursive subroutine circle_t_query(self, range, found)
+
+        class(quad_tree_t), intent(inout) :: self
+        type(circle_t), intent(in) :: range
+        type(point_t), intent(out), allocatable :: found(:)
+
+        integer :: i
+
+        if (.not.allocated(found)) allocate(found(0))
+
+        if (.not. range%intersects(self%boundary)) then
+            return 
+        end if
+        
+        do i = 1, size(self%points)
+            if (range%contains(self%points(i))) found = [found, self%points(i)]
+        end do
+
+        if (self%divided) then
+            do i = 1, size(self%children)
+                call self%children(i)%query(range, found)
+            end do
+        end if
+
+    end subroutine circle_t_query
 
 end module quad

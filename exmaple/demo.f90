@@ -4,6 +4,5 @@ program demo
     implicit none
     
     call setup
-    
 
 end program demo

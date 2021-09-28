@@ -15,17 +15,29 @@ module utils
 
     contains
 
-        procedure :: contains
-        ! procedure :: intersects
+        procedure :: contains   => rectangle_t_contains
+        procedure :: intersects => rectangle_t_intersects
 
     end type rectangle_t
+
+    !> 圆形
+    type circle_t
+
+        real :: x, y, r
+
+    contains
+
+        procedure :: contains   => circle_t_contains
+        procedure :: intersects => circle_t_intersects
+
+    end type circle_t
 
 contains
 
     !> 查询粒子是否在矩形域内
-    logical function contains(self, point)
+    logical function rectangle_t_contains(self, point) result(contains)
 
-        class(rectangle_t), intent(inout) :: self
+        class(rectangle_t), intent(in) :: self
         type(point_t), intent(in) :: point
 
         associate (x => self%x, &
@@ -40,26 +52,76 @@ contains
 
         end associate
 
-    end function contains
+    end function rectangle_t_contains
 
-    ! !> 
-    ! logical function intersects(self, range)
+    !> 查询几何形状是否有交集
+    logical function rectangle_t_intersects(self, range) result(intersects)
 
-    !     class(rectangle_t), intent(inout) :: self
-    !     type(rectangle_t), intent(in) :: range
+        class(rectangle_t), intent(in) :: self
+        type(rectangle_t), intent(in) :: range
 
-    !     associate (x => self%boundary%x, &
-    !                y => slef%boundary%y, &
-    !                w => self%boundary%w, &
-    !                z => self%boundary%h)
+        associate (left   => self%x - 0.25*self%w, &
+                   right  => self%x + 0.25*self%w, &
+                   bottom => self%y - 0.25*self%h, &
+                   top    => self%y + 0.25*self%h, &
+                   left_   => range%x - 0.25*range%w, &
+                   right_  => range%x + 0.25*range%w, &
+                   bottom_ => range%y - 0.25*range%h, &
+                   top_    => range%y + 0.25*range%h  )
 
-    !         intersects = (range%x - range%w >= x + w) .or. &
-    !                      (range%x + w       <= x - w) .or. &
-    !                      (range%y - range%h >= y - h) .or. &
-    !                      (range%y + h       <= y + h)
+            intersects = (left   < right_ ) .or. &
+                         (right  > left_  ) .or. &
+                         (bottom < top_   ) .or. &
+                         (top    > bottom_)
 
-    !     end associate
+        end associate
 
-    ! end function intersects
+    end function rectangle_t_intersects
+
+    !> 查询粒子是否在圆形内
+    logical function circle_t_contains(self, point) result(contains)
+
+        class(circle_t), intent(in) :: self
+        type(point_t), intent(in) :: point
+
+        contains = hypot(self%x - point%x, self%y - point%y) <= self%r
+
+    end function circle_t_contains
+
+    !> 查询几何形状是否有交集
+    logical function circle_t_intersects(self, range) result(intersects)
+
+        class(circle_t), intent(in) :: self
+        type(rectangle_t), intent(in) :: range
+
+        real :: x_dist, y_dist
+
+        x_dist = abs(range%x - self%x)
+        y_dist = abs(range%y - self%y)
+
+        associate(r => self%r , &
+                  w => range%w, &
+                  h => range%h  )
+            associate(edges => hypot(x_dist - w, y_dist - h))
+
+                !> no intersection
+                if (x_dist > r + w .or. y_dist > r + h) then
+                    intersects = .false.
+                    return
+                end if
+
+                !> intersection within the circle
+                if (x_dist <= w .or. y_dist <= h) then
+                    intersects = .true.
+                    return
+                end if
+
+                !> intersection on the edge of the circle
+                intersects = edges <= self%r
+
+            end associate
+        end associate
+
+    end function circle_t_intersects
 
 end module utils
