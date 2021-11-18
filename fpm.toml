@@ -1,9 +1,9 @@
 name = "quad-tree"
-version = "0.0.0"
+version = "0.0.1"
 license = "MIT"
 author = "左志华"
 maintainer = "@quad-tree contributors"
 copyright = "2021 quad-tree contributors"
 
 [dependencies]
-forlab = { git="https://github.com/fortran-fans/forlab" }
+forlab = { git="https://github.com/fortran-fans/forlab", branch="forlab-fpm" }

@@ -4,14 +4,17 @@ module utils
     
     !> 二维点
     type point_t
-        real :: x, y
+        real :: x  !! 点的横坐标
+        real :: y  !! 点的纵坐标
     end type point_t
 
     !> 矩形
     type rectangle_t
-
-        real :: x, y        !! 左下角顶点坐标
-        real :: w, h        !! 宽度, 高度
+        
+        real :: x  !! 矩形形心横坐标
+        real :: y  !! 矩形形心纵坐标
+        real :: w  !! 矩形宽度
+        real :: h  !! 矩形高度
 
     contains
 

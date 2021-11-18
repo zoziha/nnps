@@ -6,13 +6,13 @@ In the particle method fluid mechanics, the time complexity of $o(N\lg{N})$ will
 
 The quadtree is also the basis of the octree, and it is expected that support for the octree will be added in the follow-up work.
 
-| Term | Info |
-| --- | --- |
-| Version | 0.0.0 |
+| Item | Info |
+| :-: | :-: |
+| Version | 0.0.1 |
 | License | MIT |
 | Copyright | Copyright (c) 2021 quad-tree Contributors |
 
-## Start
+## Get Started
 
 ### Get the Code
 

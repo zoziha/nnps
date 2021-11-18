@@ -12,6 +12,8 @@ module quad
         integer :: capacity                             !! SPH粒子法中，该变量应该设为1
         type(point_t), allocatable :: points(:)
         logical :: divided
+        
+        !> 采用可分配内存来存储四叉树内容
         type(quad_tree_t), allocatable :: children(:)
 
         character(:), allocatable :: code               !! 调试目标
@@ -155,7 +157,7 @@ contains
 
     end subroutine show
 
-    !> 析构例程
+    !> 析构例程（没实际意义）
     subroutine delete_tree(self)
 
         class(quad_tree_t), intent(out) :: self
