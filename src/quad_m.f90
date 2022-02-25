@@ -1,7 +1,7 @@
 !> 四叉树建模
-module quad
+module quad_m
 
-    use utils, only: rectangle_t, point_t, circle_t
+    use base_m, only: rectangle_t, point_t, circle_t
     use stdlib_strings, only: to_string
     implicit none
     
@@ -114,11 +114,13 @@ contains
                    h => self%boundary%h  )
 
             !> children: 1-ne(东北), 2-nw(西北), 3-se(东南), 4-sw(西南)
-
-            ne = rectangle_t(x + 0.25*w, y + 0.25*h, 0.5*w, 0.5*h)
-            nw = rectangle_t(x - 0.25*w, y + 0.25*h, 0.5*w, 0.5*h)
-            se = rectangle_t(x + 0.25*w, y - 0.25*h, 0.5*w, 0.5*h)
-            sw = rectangle_t(x - 0.25*w, y - 0.25*h, 0.5*w, 0.5*h)
+            ! 添加容差 0.0005，使得四叉树存在小的重叠区域，以涵盖所有粒子，消除精度误差；
+            ! 存在一些粒子在两个相邻的矩形公共边上，计算机误差使得这些粒子无法插入树型表；
+            ! 同时使得，被父矩形包含的粒子，在子矩形中必定能插入。
+            ne = rectangle_t(x + 0.25*w, y + 0.25*h, 0.5005*w, 0.5005*h)
+            nw = rectangle_t(x - 0.25*w, y + 0.25*h, 0.5005*w, 0.5005*h)
+            se = rectangle_t(x + 0.25*w, y - 0.25*h, 0.5005*w, 0.5005*h)
+            sw = rectangle_t(x - 0.25*w, y - 0.25*h, 0.5005*w, 0.5005*h)
 
             call self%children(1)%constructor(ne, self%capacity)
             call self%children(2)%constructor(nw, self%capacity)
@@ -196,7 +198,7 @@ contains
 
         class(quad_tree_t), intent(inout) :: self
         type(circle_t), intent(in) :: range
-        type(point_t), intent(out), allocatable :: found(:)
+        type(point_t), intent(inout), allocatable :: found(:)
 
         integer :: i
 
@@ -218,4 +220,4 @@ contains
 
     end subroutine circle_t_query
 
-end module quad
+end module quad_m

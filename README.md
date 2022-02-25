@@ -1,37 +1,40 @@
-# quad-tree
+# 四叉树模型
 
-The quadtree model has great applications in collision detection.
+四叉树模型在碰撞检测中有很大的应用。
 
-In the particle method fluid mechanics, the time complexity of $o(N\lg{N})$ will make the particle search very efficient and robust.
+在粒子法流体力学中，时间复杂度为$o(N\lg{N})$将使得粒子搜索非常高效和健壮。
 
-The quadtree is also the basis of the octree, and it is expected that support for the octree will be added in the follow-up work.
+四叉树也是八叉树的基础，有望在后续的工作中添加对八叉树的支持。
 
-| Item | Info |
+| 项目 | 描述 |
 | :-: | :-: |
-| Version | 0.0.1 |
-| License | MIT |
-| Copyright | Copyright (c) 2021 quad-tree Contributors |
+| 版本 | 0.1.0 |
+| 许可证 | MIT |
+| 版权 | Copyright (c) 2021~2022 quad-tree 贡献者 |
 
-## Get Started
+## 开始 [English](README_EN.md)
 
-### Get the Code
+### 获取代码
 
 ```sh
 git clone https://github.com/zoziha/quad-tree.git
 cd quad-tree
 ```
 
-### Build with [fortran-lang/fpm](https://github.com/fortran-lang/fpm)
+### 使用[fortran-lang/fpm](https://github.com/fortran-lang/fpm)构建
 
-FPM is a community-driven Fortran language package manager and code build system.
-You can build the code with the provided `fpm.toml`:
+FPM是社区驱动的Fortran语言的包管理器和代码构建工具。  
+你可以通过提供的`fpm.toml`构建代码：
 
 ```sh
 fpm build
-fpm run
+fpm run --example --list
+fpm run --example <example_name>
 ```
 
-## Links
+原本本库是作为 SPH 粒子法的 NNPS 算法的学习，现如今已经被引入到了 SPH 代码中，详见：[zoziha/SPH](https://github.com/zoziha/SPH)。
+
+## 链接
 
 + [wikipedia/Quadtree](https://en.wikipedia.org/wiki/Quadtree)
 + [lewisfish/quad-tree](https://github.com/lewisfish/quad-trees)

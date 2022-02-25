@@ -1,4 +1,4 @@
-module utils
+module base_m
 
     implicit none
     
@@ -47,7 +47,10 @@ contains
                    y => self%y, &
                    w => self%w, &
                    h => self%h)
-
+            
+            !@note: 注意这里和其他地方的等于号！:
+            ! - 如果是在碰撞检测中，很可能需要等于号来检测碰撞;
+            ! - 如果是在 SPH 粒子法中，很可能不需要等于号，因为在查找域边缘的目标值往往为0.
             contains = (point%x >= x - 0.5*w) .and. &
                        (point%x <= x + 0.5*w) .and. &
                        (point%y >= y - 0.5*h) .and. &
@@ -63,19 +66,19 @@ contains
         class(rectangle_t), intent(in) :: self
         type(rectangle_t), intent(in) :: range
 
-        associate (left   => self%x - 0.25*self%w, &
-                   right  => self%x + 0.25*self%w, &
-                   bottom => self%y - 0.25*self%h, &
-                   top    => self%y + 0.25*self%h, &
-                   left_   => range%x - 0.25*range%w, &
-                   right_  => range%x + 0.25*range%w, &
-                   bottom_ => range%y - 0.25*range%h, &
-                   top_    => range%y + 0.25*range%h  )
+        associate (left   => self%x - 0.5*self%w, &
+                   right  => self%x + 0.5*self%w, &
+                   bottom => self%y - 0.5*self%h, &
+                   top    => self%y + 0.5*self%h, &
+                   left_   => range%x - 0.5*range%w, &
+                   right_  => range%x + 0.5*range%w, &
+                   bottom_ => range%y - 0.5*range%h, &
+                   top_    => range%y + 0.5*range%h  )
 
-            intersects = (left   < right_ ) .or. &
-                         (right  > left_  ) .or. &
-                         (bottom < top_   ) .or. &
-                         (top    > bottom_)
+            intersects = (left   <= right_ ) .or. &
+                         (right  >= left_  ) .or. &
+                         (bottom <= top_   ) .or. &
+                         (top    >= bottom_)
 
         end associate
 
@@ -99,26 +102,30 @@ contains
 
         real :: x_dist, y_dist
 
+        ! 形心距离
         x_dist = abs(range%x - self%x)
         y_dist = abs(range%y - self%y)
 
         associate(r => self%r , &
                   w => range%w, &
                   h => range%h  )
-            associate(edges => hypot(x_dist - w, y_dist - h))
+            associate(edges => hypot(x_dist - 0.5*w, y_dist - 0.5*h))
 
+                !> 圆形边缘在矩形外
                 !> no intersection
-                if (x_dist > r + w .or. y_dist > r + h) then
+                if (x_dist > r + 0.5*w .or. y_dist > r + 0.5*h) then
                     intersects = .false.
                     return
                 end if
 
+                !> 圆形形心在矩形内
                 !> intersection within the circle
-                if (x_dist <= w .or. y_dist <= h) then
+                if (x_dist <= 0.5*w .and. y_dist <= 0.5*h) then
                     intersects = .true.
                     return
                 end if
 
+                !> 圆形边缘在矩形内
                 !> intersection on the edge of the circle
                 intersects = edges <= self%r
 
@@ -127,4 +134,4 @@ contains
 
     end function circle_t_intersects
 
-end module utils
+end module base_m

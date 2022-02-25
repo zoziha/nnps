@@ -1,20 +1,15 @@
-module context
+program demo
 
-    use quad, only: quad_tree_t
-    use utils, only: rectangle_t, point_t
+    use quad_m, only: quad_tree_t
+    use base_m, only: rectangle_t, point_t, circle_t
     use forlab_stats, only: randu
     implicit none
     
-contains
-
-    !> 建立场景，构建四叉树。
-    subroutine setup()
-
-        type(rectangle_t) :: boundary       !! 目标域
+    type(rectangle_t) :: boundary       !! 目标域
         type(quad_tree_t) :: qt             !! 四叉树
         type(point_t)     :: p              !! 粒子
 
-        type(rectangle_t) :: range          !! 查找域
+        type(circle_t) :: range          !! 查找域
         type(point_t), allocatable :: found(:)  !! 查找所得粒子
 
         integer :: i
@@ -24,8 +19,10 @@ contains
         call qt%constructor(boundary, 4)
 
         ! range = rectangle_t(100.0, 100.0, 200.0, 200.0)
-        range = rectangle_t(randu(50.0, 100.0), randu(50.0, 100.0), randu(50.0, 100.0), randu(50.0, 100.0))
-        print *, "查找域信息: "//new_line(""), range%x, range%y, range%w, range%h
+        range = circle_t(randu(50.0, 100.0), randu(50.0, 100.0), randu(50.0, 100.0))
+        print *, "查找域信息: "//new_line(""), range%x, range%y, range%r
+        ! range = rectangle_t(randu(50.0, 100.0), randu(50.0, 100.0), randu(50.0, 100.0), randu(50.0, 100.0))
+        ! print *, "查找域信息: "//new_line(""), range%x, range%y, range%w, range%h
 
         !> 布置粒子：随机位置
         do i = 1, 16
@@ -47,6 +44,4 @@ contains
         end do
         print *, "查询到粒子数: ", i-1
 
-    end subroutine setup
-
-end module context
+end program demo
