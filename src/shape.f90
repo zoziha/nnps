@@ -11,6 +11,7 @@ module shape_m
     !> 支持1~3维
     type point_t
         real(real32), allocatable :: x(:) !! 坐标
+        integer, allocatable :: id        !! 编号
     end type point_t
     
     ! 形状类型
