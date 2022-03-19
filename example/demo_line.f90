@@ -14,16 +14,16 @@ program demo
     call binarize_tree%insert(point_t([0.5]), info)
     call binarize_tree%insert(point_t([-0.1]), info)
     call binarize_tree%insert(point_t([0.1]), info)
-    call binarize_tree%insert(point_t([0.9]), info)
+    call binarize_tree%insert(point_t([0.85]), info)
     call binarize_tree%insert(point_t([0.7]), info)
     call binarize_tree%insert(point_t([0.3]), info)
     call binarize_tree%insert(point_t([randu()]), info)
-    call make_range(point_t([0.9]), 1.0, range)
+    call make_range(point=point_t([0.9]), radius=0.3, range=range)
     call binarize_tree%query(range, found)
 
     if (.not.allocated(found)) stop
     do i = 1, size(found)
-        print *, found(i)%x(1)
+        write(*, '("x = [",f6.2,"] dist = ",f6.2)') found(i)%x(1), abs(found(i)%x(1) - 0.9)
     end do
 
 contains

@@ -23,7 +23,8 @@ program demo
 
     if (.not.allocated(found)) stop
     do i = 1, size(found)
-        print *, found(i)%x(1), found(i)%x(2), found(i)%x(3)
+        write(*, '("x = [",3(f6.2,1x),"] dist = ",f6.2)') found(i)%x(1), found(i)%x(2), found(i)%x(3), &
+            norm2([found(i)%x(1)-0.9, found(i)%x(2)-0.9, found(i)%x(3)-0.9])
     end do
 
 contains

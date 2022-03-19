@@ -41,7 +41,7 @@ contains
         class(shape_t), intent(out), allocatable :: range 
         select case (size(point%x))
         case (1)
-            range = line_t  (point%x, radius)
+            range = line_t  (point%x, radius*2)
         case (2)
             range = circle_t(point%x, radius)
         case (3)
