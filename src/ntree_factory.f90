@@ -19,18 +19,18 @@ contains
         logical, intent(in) :: squared
         select case (size(xmin))
         case (1)
-            boundary = line_t((xmin + xmax)/2, xmax(1) - xmin(1))
+            boundary = line_t((xmin + xmax)*0.5, xmax(1) - xmin(1))
         case (2)
             if (squared) then
-                boundary = square_t   ((xmin + xmax)/2, maxval(xmax - xmin))
+                boundary = square_t   ((xmin + xmax)*0.5, maxval(xmax - xmin))
             else
-                boundary = rectangle_t((xmin + xmax)/2,        xmax - xmin)
+                boundary = rectangle_t((xmin + xmax)*0.5,        xmax - xmin)
             end if
         case (3)
             if (squared) then
-                boundary = cube_t  ((xmin + xmax)/2, maxval(xmax - xmin))
+                boundary = cube_t  ((xmin + xmax)*0.5, maxval(xmax - xmin))
             else
-                boundary = cuboid_t((xmin + xmax)/2,        xmax - xmin)
+                boundary = cuboid_t((xmin + xmax)*0.5,        xmax - xmin)
             end if
         end select
     end subroutine make_boundary
