@@ -1,4 +1,2 @@
 .vscode/*
-build/*
 doc/book/*
-*.out

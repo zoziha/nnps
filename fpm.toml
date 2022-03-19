@@ -1,12 +1,12 @@
-name = "quad-tree"
-version = "0.1.0"
+name = "ntree"
+version = "0.1.1"
 license = "MIT"
 author = "左志华"
-maintainer = "@quad-tree contributors"
-copyright = "2021~2022 quad-tree contributors"
-
-[dependencies]
-forlab = { git="https://github.com/fortran-fans/forlab", branch="forlab-fpm" }
+maintainer = "zuo.zhihua@qq.com"
+copyright = "Copyright 2021~2022 左志华"
 
 [build]
 auto-examples = true
+
+[install]
+library = false
