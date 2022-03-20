@@ -19,6 +19,7 @@ program demo
     call oct_tree%insert(point_t([0.3, 0.5, 0.6]), info)
     call oct_tree%insert(point_t([randu(), randu(), randu()]), info)
     call make_range(point_t([0.9, 0.9, 0.9]), 0.5, range)
+    allocate(found(0)) ! allocate space for found points
     call oct_tree%query(range, found)
 
     if (.not.allocated(found)) stop
