@@ -119,10 +119,7 @@ contains
     logical pure function line_t_contains(self, point)
         class(line_t), intent(in) :: self
         type(point_t), intent(in) :: point
-        associate (x => self%center(1), l => self%length)
-            line_t_contains = (point%x(1) > func1(x, l)) &
-                              .and. (point%x(1) < func2(x, l))
-        end associate
+        line_t_contains = 2.0_rk*abs(self%center(1) - point%x(1)) < self%length
     end function line_t_contains
 
     logical pure function circle_t_contains(self, point)
@@ -194,11 +191,10 @@ contains
         class(shape_t), intent(in) :: other
         select type (other)
         type is (line_t)
-            associate (left => func1(self%center(1), self%length), &
-                       right => func2(self%center(1), self%length), &
-                       left_ => func1(other%center(1), other%length), &
-                       right_ => func2(other%center(1), other%length))
-                line_t_intersects = (left < right_) .or. (right > left_)
+            associate (x => 2.0_rk*abs(self%center(1) - other%center(1)), &
+                       l => self%length, &
+                       l_ => other%length)
+                line_t_intersects = x < (l + l_)
             end associate
         end select
     end function line_t_intersects

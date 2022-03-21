@@ -21,7 +21,7 @@ program demo
     call oct_tree%insert(point_t([0.7, 0.6, 0.5]), info)
     call oct_tree%insert(point_t([0.3, 0.5, 0.6]), info)
     call oct_tree%insert(point_t([randu(), randu(), randu()]), info)
-    call make_range(point_t([0.9, 0.9, 0.9]), 0.5, range)
+    call make_range([0.9, 0.9, 0.9], 0.5, range)
     call oct_tree%query(range, found)
 
     if (found%size() == 0) stop

@@ -1,5 +1,5 @@
 name = "ntree"
-version = "0.1.6"
+version = "0.1.7"
 license = "MIT"
 author = "左志华"
 maintainer = "zuo.zhihua@qq.com"
@@ -10,6 +10,9 @@ auto-examples = true
 
 [dependencies]
 queue = { git = "https://gitee.com/zoziha/queue.git" }
+
+[dev-dependencies]
+test-drive = { git = "https://github.com/fortran-lang/test-drive", tag="v0.4.0" }
 
 [install]
 library = false

@@ -14,14 +14,14 @@ program demo
 
     call make_boundary([0.0, 0.0], [1.0, 1.0], boundary, squared=.true.)
     call make_ntree(boundary, 2, quad_tree)
-    call quad_tree%insert(point_t([0.5, 0.5]), info)
-    call quad_tree%insert(point_t([-0.1, 0.1]), info)
-    call quad_tree%insert(point_t([0.1, 0.2]), info)
-    call quad_tree%insert(point_t([0.9, 0.4]), info)
-    call quad_tree%insert(point_t([0.7, 0.6]), info)
-    call quad_tree%insert(point_t([0.3, 0.5]), info)
-    call quad_tree%insert(point_t([randu(), randu()]), info)
-    call make_range(point_t([0.9, 0.9]), 0.5, range)
+    call quad_tree%insert(point_t([0.5, 0.5], 1), info)
+    call quad_tree%insert(point_t([-0.1, 0.1], 2), info)
+    call quad_tree%insert(point_t([0.1, 0.2], 3), info)
+    call quad_tree%insert(point_t([0.9, 0.4], 4), info)
+    call quad_tree%insert(point_t([0.7, 0.6], 5), info)
+    call quad_tree%insert(point_t([0.3, 0.5], 6), info)
+    call quad_tree%insert(point_t([randu(), randu()], 7), info)
+    call make_range([0.9, 0.9], 0.5, range)
     call quad_tree%query(range, found)
 
     if (found%size() == 0) stop

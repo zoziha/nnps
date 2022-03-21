@@ -36,17 +36,17 @@ contains
     end subroutine make_boundary
 
     !> 构建查找域边界
-    subroutine make_range(point, radius, range)
-        type(point_t), intent(in) :: point
+    subroutine make_range(center, radius, range)
+        real(rk), intent(in) :: center(:)
         real(rk), intent(in) :: radius
         class(shape_t), intent(out), allocatable :: range
-        select case (size(point%x))
+        select case (size(center))
         case (1)
-            range = line_t(point%x, radius*2.0_rk)
+            range = line_t(center, radius*2.0_rk)
         case (2)
-            range = circle_t(point%x, radius)
+            range = circle_t(center, radius)
         case (3)
-            range = sphere_t(point%x, radius)
+            range = sphere_t(center, radius)
         end select
     end subroutine make_range
 

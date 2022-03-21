@@ -21,7 +21,7 @@ program demo
     call binarize_tree%insert(point_t([0.7]), info)
     call binarize_tree%insert(point_t([0.3]), info)
     call binarize_tree%insert(point_t([randu()]), info)
-    call make_range(point=point_t([0.9]), radius=0.3, range=range)
+    call make_range([0.9], radius=0.3, range=range)
     call binarize_tree%query(range, found)
 
     if (found%size() == 0) stop
