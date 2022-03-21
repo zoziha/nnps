@@ -2,10 +2,13 @@
 program demo
 
     use ntree_factory_m, only: ntree_t, shape_t, make_boundary, make_ntree, make_range, point_t
+    use queue_m, only: queue_t
     implicit none
     class(shape_t), allocatable :: boundary, range
-    type (point_t), allocatable :: found(:)
-    type (ntree_t) :: oct_tree
+    type(queue_t) :: found
+    class(*), allocatable :: data
+    type(point_t), allocatable :: point
+    type(ntree_t) :: oct_tree
     logical :: info
     integer :: i
 
@@ -19,13 +22,14 @@ program demo
     call oct_tree%insert(point_t([0.3, 0.5, 0.6]), info)
     call oct_tree%insert(point_t([randu(), randu(), randu()]), info)
     call make_range(point_t([0.9, 0.9, 0.9]), 0.5, range)
-    allocate(found(0)) ! allocate space for found points
     call oct_tree%query(range, found)
 
-    if (.not.allocated(found)) stop
-    do i = 1, size(found)
-        write(*, '("x = [",3(f6.2,1x),"] dist = ",f6.2)') found(i)%x(1), found(i)%x(2), found(i)%x(3), &
-            norm2([found(i)%x(1)-0.9, found(i)%x(2)-0.9, found(i)%x(3)-0.9])
+    if (found%size() == 0) stop
+    do i = 1, found%size()
+        call found%dequeue(data)
+        point = to_point(data)
+        write (*, '("x = [",3(f6.2,1x),"] dist = ",f6.2)') point%x(1), point%x(2), point%x(3), &
+            norm2([point%x(1) - 0.9, point%x(2) - 0.9, point%x(3) - 0.9])
     end do
 
 contains
@@ -34,5 +38,14 @@ contains
         real :: r
         call random_number(r)
     end function randu
+    
+    pure function to_point(x) result(p)
+        class(*), intent(in) :: x
+        type(point_t) :: p
+        select type (x)
+        type is (point_t)
+            p = x
+        end select
+    end function to_point
 
 end program demo

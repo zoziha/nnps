@@ -1,5 +1,5 @@
 name = "ntree"
-version = "0.1.5"
+version = "0.1.6"
 license = "MIT"
 author = "左志华"
 maintainer = "zuo.zhihua@qq.com"
@@ -7,6 +7,9 @@ copyright = "Copyright 2021~2022 左志华"
 
 [build]
 auto-examples = true
+
+[dependencies]
+queue = { git = "https://gitee.com/zoziha/queue.git" }
 
 [install]
 library = false

@@ -23,12 +23,12 @@ module shape_m
     end type shape_t
 
     abstract interface
-        logical function shape_t_contains(self, point)
+        logical pure function shape_t_contains(self, point)
             import shape_t, point_t
             class(shape_t), intent(in) :: self
             type(point_t), intent(in) :: point
         end function shape_t_contains
-        logical function shape_t_intersects(self, other)
+        logical pure function shape_t_intersects(self, other)
             import shape_t
             class(shape_t), intent(in) :: self
             class(shape_t), intent(in) :: other

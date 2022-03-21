@@ -3,6 +3,7 @@ module ntree_m
 
     use shape_m, only: point_t, shape_t, line_t, rectangle_t, square_t, cube_t, cuboid_t
     use, intrinsic :: iso_fortran_env, only: rk => real32, stdout => output_unit
+    use queue_m, only: queue_t
     implicit none
     private
 
@@ -164,15 +165,15 @@ contains
     end subroutine ntree_t_divide
 
     !> 查询点
-    recursive subroutine ntree_t_query(self, range, found)
+    pure recursive subroutine ntree_t_query(self, range, found)
         class(ntree_t), intent(inout) :: self
         class(shape_t), intent(in) :: range
-        type(point_t), intent(inout), allocatable :: found(:)
+        type(queue_t), intent(inout) :: found
         integer :: i
         if (.not. range%intersects(self%boundary)) return
         do i = 1, size(self%points)
             if (range%contains(self%points(i))) then
-                found = [found, self%points(i)]
+                call found%enqueue(self%points(i))
             end if
         end do
         if (self%divided) then
