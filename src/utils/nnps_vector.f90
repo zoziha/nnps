@@ -21,6 +21,7 @@ module nnps_vector
 contains
 
     !> 初始化向量
+    !> @todo adjust default length
     pure subroutine init(self)
         class(vector), intent(inout) :: self
 

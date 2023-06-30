@@ -12,6 +12,7 @@ program example_tree1d
     call nnps%build()
     call nnps%query(0.6_rk, pairs)
 
+    print *, '*** kd-tree find (1D)'
     call display(real(pairs), 'pairs index:')
     call display(loc(pairs), 'pairs coordinates:')
 

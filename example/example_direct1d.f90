@@ -11,6 +11,7 @@ program example_direct1d
     call nnps%init(loc)
     call nnps%query(0.6_rk, pairs)
 
+    print *, '*** direct find (1D)'
     call display(real(pairs), 'pairs index:')
     call display(loc(pairs), 'pairs coordinates:')
 
