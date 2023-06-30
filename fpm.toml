@@ -1,18 +1,16 @@
-name = "ntree"
-version = "0.1.7"
+name = "nnps"
+version = "0.2.0"
 license = "MIT"
-author = "左志华"
+author = "ZUO Zhihua"
 maintainer = "zuo.zhihua@qq.com"
-copyright = "Copyright 2021~2022 左志华"
+copyright = "Copyright 2021~2023 ZUO Zhihua"
 
 [build]
 auto-examples = true
 
-[dependencies]
-queue = { git = "https://gitee.com/zoziha/queue.git" }
-
 [dev-dependencies]
-test-drive = { git = "https://github.com/fortran-lang/test-drive", tag="v0.4.0" }
+test-drive = { git = "https://github.com/fortran-lang/test-drive", tag = "v0.4.0" }
+display = { git = "https://gitee.com/zoziha/display" }
 
 [install]
-library = false
+library = true

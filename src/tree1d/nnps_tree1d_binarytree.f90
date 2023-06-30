@@ -1,0 +1,99 @@
+!> binary tree
+module nnps_tree1d_binarytree
+
+    use nnps_kinds, only: rk
+    use nnps_tree1d_shape, only: line
+    use nnps_vector, only: vector
+    implicit none
+
+    private
+    public :: binarytree
+
+    !> binary tree
+    type binarytree
+        type(line) :: boundary  !! boundary
+        type(binarytree), allocatable :: children(:)  !! leef
+        type(vector) :: points  !! points
+    contains
+        procedure :: add, divide, query, clear
+    end type binarytree
+
+contains
+
+    !> add point
+    recursive subroutine add(self, x, i, done)
+        class(binarytree), intent(inout) :: self
+        real(rk), intent(in) :: x
+        integer, intent(in) :: i
+        logical, intent(out) :: done
+        integer :: j
+
+        done = .false.
+        if (.not. self%boundary%contain(x)) return
+
+        if (self%points%len < 1) then
+            call self%points%push(i)
+        else
+            if (.not. allocated(self%children)) call self%divide()
+            do j = 1, 2
+                call self%children(j)%add(x, i, done)
+                if (done) return
+            end do
+        end if
+
+    end subroutine add
+
+    !> divide
+    subroutine divide(self)
+        class(binarytree), intent(inout) :: self
+
+        allocate (self%children(2))
+        associate (mid => (self%boundary%left + self%boundary%right)/2)
+            self%children(1)%boundary%left = self%boundary%left
+            self%children(1)%boundary%right = mid
+            self%children(2)%boundary%left = mid
+            self%children(2)%boundary%right = self%boundary%right
+        end associate
+
+    end subroutine divide
+
+    !> query
+    subroutine query(self, loc, range, pairs)
+        class(binarytree), intent(inout) :: self
+        real(rk), intent(in) :: loc(:)
+        type(line), intent(in) :: range
+        type(vector), intent(inout) :: pairs
+        integer :: i
+
+        if (.not. range%intersect(self%boundary)) return
+
+        if (self%points%len > 0) then
+            if (range%contain(loc(self%points%items(1)))) then
+                call pairs%push(self%points%items(1))
+            end if
+        end if
+
+        if (allocated(self%children)) then
+            do i = 1, 2
+                call self%children(i)%query(loc, range, pairs)
+            end do
+        end if
+
+    end subroutine query
+
+    !> clear
+    subroutine clear(self)
+        class(binarytree), intent(inout) :: self
+        integer :: i
+
+        self%points%len = 0
+
+        if (allocated(self%children)) then
+            do i = 1, 2
+                call self%children(i)%clear()
+            end do
+        end if
+
+    end subroutine clear
+
+end module nnps_tree1d_binarytree
