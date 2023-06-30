@@ -1,4 +1,4 @@
-!> 直接粒子搜索(3d)
+!> 3D direct neighbor search
 module nnps_direct3d_module
 
     use nnps_kinds, only: rk

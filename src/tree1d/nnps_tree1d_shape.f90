@@ -7,6 +7,7 @@ module nnps_tree1d_shape
     private
     public :: line
 
+    !> line shape
     type line
         real(rk) :: left, right  !! left and right coordinate
     contains
@@ -20,7 +21,7 @@ contains
         class(line), intent(in) :: self
         real(rk), intent(in) :: x
 
-        contain = x > self%left .and. x < self%right
+        contain = x >= self%left .and. x <= self%right
 
     end function contain
 
@@ -29,7 +30,7 @@ contains
         class(line), intent(in) :: self
         type(line), intent(in) :: that
 
-        intersect = self%contain(that%left) .or. self%contain(that%right)
+        intersect = .not. (self%right <= that%left .or. self%left >= that%right)
 
     end function intersect
 

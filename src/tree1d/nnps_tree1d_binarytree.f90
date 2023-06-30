@@ -15,10 +15,20 @@ module nnps_tree1d_binarytree
         type(binarytree), allocatable :: children(:)  !! leef
         type(vector) :: points  !! points
     contains
-        procedure :: add, divide, query, clear
+        procedure :: init, add, divide, query, clear
     end type binarytree
 
 contains
+
+    !> initialize
+    subroutine init(self, left, right)
+        class(binarytree), intent(inout) :: self
+        real(rk), intent(in) :: left, right
+
+        call self%points%init()
+        self%boundary = line(left, right)
+
+    end subroutine init
 
     !> add point
     recursive subroutine add(self, x, i, done)
@@ -28,11 +38,11 @@ contains
         logical, intent(out) :: done
         integer :: j
 
-        done = .false.
         if (.not. self%boundary%contain(x)) return
 
         if (self%points%len < 1) then
             call self%points%push(i)
+            done = .true.
         else
             if (.not. allocated(self%children)) call self%divide()
             do j = 1, 2
@@ -49,33 +59,35 @@ contains
 
         allocate (self%children(2))
         associate (mid => (self%boundary%left + self%boundary%right)/2)
-            self%children(1)%boundary%left = self%boundary%left
-            self%children(1)%boundary%right = mid
-            self%children(2)%boundary%left = mid
-            self%children(2)%boundary%right = self%boundary%right
+            call self%children(1)%init(self%boundary%left, mid)
+            call self%children(2)%init(mid, self%boundary%right)
         end associate
 
     end subroutine divide
 
     !> query
-    subroutine query(self, loc, range, pairs)
-        class(binarytree), intent(inout) :: self
+    subroutine query(self, loc, range, i, pairs)
+        class(binarytree), intent(in) :: self
         real(rk), intent(in) :: loc(:)
         type(line), intent(in) :: range
+        integer, intent(in) :: i
         type(vector), intent(inout) :: pairs
-        integer :: i
+        integer :: j
 
         if (.not. range%intersect(self%boundary)) return
 
         if (self%points%len > 0) then
             if (range%contain(loc(self%points%items(1)))) then
-                call pairs%push(self%points%items(1))
+                if (self%points%items(1) > i) then
+                    call pairs%push(i)
+                    call pairs%push(self%points%items(1))
+                end if
             end if
         end if
 
         if (allocated(self%children)) then
-            do i = 1, 2
-                call self%children(i)%query(loc, range, pairs)
+            do j = 1, 2
+                call self%children(j)%query(loc, range, i, pairs)
             end do
         end if
 

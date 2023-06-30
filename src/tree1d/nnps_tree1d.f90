@@ -31,8 +31,7 @@ contains
 
         self%loc => loc
         call self%pairs%init()
-        self%tree%boundary%left = min
-        self%tree%boundary%right = max
+        call self%tree%init(min, max)
 
     end subroutine init
 
@@ -46,6 +45,7 @@ contains
         call self%tree%clear()
 
         do i = 1, size(self%loc)
+            done = .false.
             call self%tree%add(self%loc(i), i, done)
             if (.not. done) error stop "nnps_tree1d: build failed"
         end do
@@ -63,11 +63,11 @@ contains
 
         do i = 1, size(self%loc)
             associate (range => line(self%loc(i) - radius, self%loc(i) + radius))
-                call self%tree%query(self%loc, range, self%pairs)
+                call self%tree%query(self%loc, range, i, self%pairs)
             end associate
         end do
 
-        pairs => self%pairs%items(:self%pairs%len)
+        pairs => self%pairs%items(1:self%pairs%len)
 
     end subroutine query
 

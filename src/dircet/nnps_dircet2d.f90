@@ -1,4 +1,4 @@
-!> 直接粒子搜索(2d)
+!> 2D direct neighbor search
 module nnps_direct2d_module
 
     use nnps_kinds, only: rk
