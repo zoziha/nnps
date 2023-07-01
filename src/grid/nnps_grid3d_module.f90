@@ -67,7 +67,6 @@ contains
         real(rk), intent(in) :: radius
         integer, dimension(:), pointer :: pairs
         integer :: i, j, k, l, m
-        real(rk) :: r
 
         self%pairs%len = 0
 

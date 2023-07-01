@@ -1,0 +1,4 @@
+[wrap-git]
+directory = display
+url = https://github.com/zoziha/display
+revision = HEAD

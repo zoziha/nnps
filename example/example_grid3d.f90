@@ -20,9 +20,10 @@ program example_grid3d
     call display(loc(:, pairs), 'pairs coordinates:')
 
 end program example_grid3d
+!>  *** grid find (3D)
 !> [vector: 2] pairs index:
-!>  2.000E+00,  4.000E+00
+!>  4.000E+00,  2.000E+00
 !> [matrix: 3*2] pairs coordinates:
-!>  1.500E+00,  1.000E+00;
+!>  1.000E+00,  1.500E+00;
 !>  1.000E+00,  1.000E+00;
 !>  1.000E+00,  1.000E+00
