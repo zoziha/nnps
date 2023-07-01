@@ -8,6 +8,7 @@ module nnps_module
     use nnps_tree1d_module, only: nnps_binarytree
     use nnps_tree2d_module, only: nnps_quadtree
     use nnps_tree3d_module, only: nnps_octree
+    use nnps_grid1d_module, only: nnps_grid1d
     implicit none
 
 end module nnps_module
