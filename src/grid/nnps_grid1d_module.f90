@@ -23,13 +23,14 @@ module nnps_grid1d_module
 contains
 
     !> initialize
-    subroutine init(self, loc, min, max, radius)
+    subroutine init(self, loc, min, max, radius, len)
         class(nnps_grid1d), intent(inout) :: self
         real(rk), dimension(:), intent(in), target :: loc
         real(rk), intent(in) :: min, max, radius
+        integer, intent(in), optional :: len
 
         self%loc => loc
-        call self%pairs%init()
+        call self%pairs%init(len)
         self%min = min - radius - sqrt_eps
         self%max = max
         self%radius = radius

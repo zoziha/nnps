@@ -24,13 +24,14 @@ module nnps_tree3d_module
 contains
 
     !> initialize
-    subroutine init(self, loc, min, max)
+    subroutine init(self, loc, min, max, len)
         class(nnps_octree), intent(inout) :: self
         real(rk), dimension(:, :), intent(in), target :: loc
         real(rk), intent(in), dimension(3) :: min, max
+        integer, intent(in), optional :: len
 
         self%loc => loc
-        call self%pairs%init()
+        call self%pairs%init(len)
         call self%tree%init(min(1), max(1), max(2), min(2), max(3), min(3))
 
     end subroutine init

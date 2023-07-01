@@ -69,7 +69,7 @@ contains
     end subroutine divide
 
     !> query
-    subroutine query(self, loc, range, i, pairs)
+    recursive subroutine query(self, loc, range, i, pairs)
         class(quadtree), intent(in) :: self
         real(rk), intent(in) :: loc(:, :)
         type(circle), intent(in) :: range
@@ -97,7 +97,7 @@ contains
     end subroutine query
 
     !> clear
-    subroutine clear(self)
+    recursive subroutine clear(self)
         class(quadtree), intent(inout) :: self
         integer :: i
 

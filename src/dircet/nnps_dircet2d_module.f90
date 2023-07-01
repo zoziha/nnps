@@ -20,12 +20,13 @@ module nnps_direct2d_module
 contains
 
     !> initialize
-    subroutine init(self, loc)
+    subroutine init(self, loc, len)
         class(nnps_direct2d), intent(inout), target :: self
         real(rk), intent(in), target :: loc(:, :)
+        integer, intent(in), optional :: len
 
         self%loc => loc
-        call self%pairs%init()
+        call self%pairs%init(len)
 
     end subroutine init
 

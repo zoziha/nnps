@@ -22,11 +22,18 @@ contains
 
     !> 初始化向量
     !> @todo adjust default length
-    elemental subroutine init(self)
+    elemental subroutine init(self, len)
         class(vector), intent(inout) :: self
+        integer, intent(in), optional :: len
 
         self%len = 0
-        if (.not. allocated(self%items)) allocate (self%items(256))
+        if (.not. allocated(self%items)) then
+            if (present(len)) then
+                allocate (self%items(len))
+            else
+                allocate (self%items(64))
+            end if
+        end if
 
     end subroutine init
 

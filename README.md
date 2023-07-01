@@ -13,7 +13,7 @@ NNPS scheme practice in CFD particle method.
 ## Usage
 
 Only [FPM]((https://github.com/fortran-lang/fpm)) is supported, other build systems can copy source files directly,
-and `ifort` and `gfortran` compilers are tested.
+and `ifort/ifx` and `gfortran` compilers are tested.
 
 To use `nnps` within your `fpm` project, add the following lines to your `fpm.toml` file:
 

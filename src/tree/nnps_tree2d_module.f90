@@ -24,13 +24,14 @@ module nnps_tree2d_module
 contains
 
     !> initialize
-    subroutine init(self, loc, min, max)
+    subroutine init(self, loc, min, max, len)
         class(nnps_quadtree), intent(inout) :: self
         real(rk), dimension(:, :), intent(in), target :: loc
         real(rk), intent(in), dimension(2) :: min, max
+        integer, intent(in), optional :: len
 
         self%loc => loc
-        call self%pairs%init()
+        call self%pairs%init(len)
         call self%tree%init(min(1), max(1), max(2), min(2))
 
     end subroutine init

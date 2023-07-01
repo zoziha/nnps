@@ -24,14 +24,15 @@ module nnps_grid2d_module
 contains
 
     !> initialize
-    subroutine init(self, loc, min, max, radius)
+    subroutine init(self, loc, min, max, radius, len)
         class(nnps_grid2d), intent(inout) :: self
         real(rk), dimension(:, :), intent(in), target :: loc
         real(rk), dimension(2), intent(in) :: min, max
         real(rk), intent(in) :: radius
+        integer, intent(in), optional :: len
 
         self%loc => loc
-        call self%pairs%init()
+        call self%pairs%init(len)
         self%min(1) = min(1) - radius - sqrt_eps    ! setup empty grids at the boundary
         self%min(2) = min(2) - sqrt_eps
         self%max = max + radius                     ! setup empty grids at the boundary

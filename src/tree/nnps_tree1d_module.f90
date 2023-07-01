@@ -24,13 +24,14 @@ module nnps_tree1d_module
 contains
 
     !> initialize
-    subroutine init(self, loc, min, max)
+    subroutine init(self, loc, min, max, len)
         class(nnps_binarytree), intent(inout) :: self
         real(rk), dimension(:), intent(in), target :: loc
         real(rk), intent(in) :: min, max
+        integer, intent(in), optional :: len
 
         self%loc => loc
-        call self%pairs%init()
+        call self%pairs%init(len)
         call self%tree%init(min, max)
 
     end subroutine init
