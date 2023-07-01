@@ -70,34 +70,50 @@ contains
 
         self%pairs%len = 0
 
-        do l = 1, size(self%grids, 2) - 1
+        do j = 1, size(self%grids, 2) - 1
             do i = 2, size(self%grids, 1) - 1
 
-                if (self%grids(i, l)%len == 0) cycle
+                if (self%grids(i, j)%len == 0) cycle
+                do k = 1, self%grids(i, j)%len
 
-                do j = 1, self%grids(i, l)%len
-                    do k = j + 1, self%grids(i, l)%len
-                        call distance2d(self%loc(:, self%grids(i, l)%items(j)), &
-                                        self%loc(:, self%grids(i, l)%items(k)), r)
-                        if (r < radius) then
-                            call self%pairs%push(self%grids(i, l)%items(j))
-                            call self%pairs%push(self%grids(i, l)%items(k))
-                        end if
+                    do l = k + 1, self%grids(i, j)%len
+                        call pairing(i, j, i, j, k, l, self%pairs)
                     end do
-                    do k = 1, self%grids(i - 1, l)%len
-                        call distance2d(self%loc(:, self%grids(i, l)%items(j)), &
-                                        self%loc(:, self%grids(i - 1, l)%items(k)), r)
-                        if (r < radius) then
-                            call self%pairs%push(self%grids(i, l)%items(j))
-                            call self%pairs%push(self%grids(i - 1, l)%items(k))
-                        end if
+                    do l = 1, self%grids(i - 1, j + 1)%len
+                        call pairing(i, j, i - 1, j + 1, k, l, self%pairs)
                     end do
+                    do l = 1, self%grids(i, j + 1)%len
+                        call pairing(i, j, i, j + 1, k, l, self%pairs)
+                    end do
+                    do l = 1, self%grids(i + 1, j + 1)%len
+                        call pairing(i, j, i + 1, j + 1, k, l, self%pairs)
+                    end do
+                    do l = 1, self%grids(i + 1, j)%len
+                        call pairing(i, j, i + 1, j, k, l, self%pairs)
+                    end do
+
                 end do
 
             end do
         end do
 
         pairs => self%pairs%items(1:self%pairs%len)
+
+    contains
+
+        pure subroutine pairing(i, j, ik, jk, k, l, pairs)
+            integer, intent(in) :: i, j, ik, jk, k, l
+            type(vector), intent(inout) :: pairs
+            real(rk) :: r
+
+            call distance2d(self%loc(:, self%grids(i, j)%items(k)), &
+                            self%loc(:, self%grids(ik, jk)%items(l)), r)
+            if (r < radius) then
+                call pairs%push(self%grids(i, j)%items(k))
+                call pairs%push(self%grids(ik, jk)%items(l))
+            end if
+
+        end subroutine pairing
 
     end subroutine query
 
