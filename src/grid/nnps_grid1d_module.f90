@@ -30,13 +30,14 @@ contains
 
         self%loc => loc
         call self%pairs%init()
-        associate (ik => ceiling((max - min)/radius))
+        self%min = min - radius - sqrt_eps
+        self%max = max
+        self%radius = radius
+
+        associate (ik => ceiling((self%max - self%min)/radius))
             allocate (self%grids(ik))
             call self%grids(:)%init()
         end associate
-        self%min = min - sqrt_eps
-        self%max = max
-        self%radius = radius
 
     end subroutine init
 
@@ -46,7 +47,7 @@ contains
         integer :: i
 
         call self%check()
-        self%grids%len = 0
+        self%grids(2:)%len = 0
 
         do i = 1, size(self%loc)
             associate (ik => ceiling((self%loc(i) - self%min)/self%radius))
@@ -65,18 +66,6 @@ contains
         real(rk) :: r
 
         self%pairs%len = 0
-
-        if (self%grids(1)%len > 1) then
-            do j = 1, self%grids(1)%len
-                do k = j + 1, self%grids(1)%len
-                    call distance1d(self%loc(self%grids(1)%items(j)), self%loc(self%grids(1)%items(k)), r)
-                    if (r < radius) then
-                        call self%pairs%push(self%grids(1)%items(j))
-                        call self%pairs%push(self%grids(1)%items(k))
-                    end if
-                end do
-            end do
-        end if
 
         do i = 2, size(self%grids)
             if (self%grids(i)%len == 0) cycle
