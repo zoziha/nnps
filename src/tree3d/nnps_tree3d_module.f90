@@ -1,43 +1,43 @@
-!> quadrature tree search
-module nnps_tree2d_module
+!> octave tree search
+module nnps_tree3d_module
 
     use nnps_kinds, only: rk
     use nnps_vector, only: vector
-    use nnps_math, only: distance2d
-    use nnps_tree2d_quadtree, only: quadtree
-    use nnps_tree2d_shape, only: circle
+    use nnps_math, only: distance3d
+    use nnps_tree3d_octree, only: octree
+    use nnps_tree3d_shape, only: sphere
     implicit none
 
     private
-    public :: nnps_quadtree
+    public :: nnps_octree
 
-    !> quadrature tree
-    type nnps_quadtree
-        real(rk), pointer :: loc(:, :)  !! particle 2d coordinate
+    !> octave tree
+    type nnps_octree
+        real(rk), pointer :: loc(:, :)  !! particle 3d coordinate
         type(vector) :: pairs  !! partcile pairs
-        type(quadtree) :: tree  !! data tree
+        type(octree) :: tree  !! data tree
     contains
         procedure :: init, build, query
         procedure, private :: check
-    end type nnps_quadtree
+    end type nnps_octree
 
 contains
 
     !> initialize
     subroutine init(self, loc, min, max)
-        class(nnps_quadtree), intent(inout) :: self
+        class(nnps_octree), intent(inout) :: self
         real(rk), dimension(:, :), intent(in), target :: loc
-        real(rk), intent(in), dimension(2) :: min, max
+        real(rk), intent(in), dimension(3) :: min, max
 
         self%loc => loc
         call self%pairs%init()
-        call self%tree%init(min(1), max(1), max(2), min(2))
+        call self%tree%init(min(1), max(1), max(2), min(2), max(3), min(3))
 
     end subroutine init
 
     !> build tree
     subroutine build(self)
-        class(nnps_quadtree), intent(inout) :: self
+        class(nnps_octree), intent(inout) :: self
         integer :: i
         logical :: done
 
@@ -47,14 +47,14 @@ contains
         do i = 1, size(self%loc, 2)
             done = .false.
             call self%tree%add(self%loc(:, i), i, done)
-            if (.not. done) error stop "nnps_tree2d: build failed"
+            if (.not. done) error stop "nnps_tree3d: build failed"
         end do
 
     end subroutine build
 
     !> query
     subroutine query(self, radius, pairs)
-        class(nnps_quadtree), intent(inout), target :: self
+        class(nnps_octree), intent(inout), target :: self
         real(rk), intent(in) :: radius
         integer, dimension(:), pointer :: pairs
         integer :: i
@@ -62,7 +62,7 @@ contains
         self%pairs%len = 0
 
         do i = 1, size(self%loc, 2)
-            associate (range => circle(self%loc(:, i), radius))
+            associate (range => sphere(self%loc(:, i), radius))
                 call self%tree%query(self%loc, range, i, self%pairs)
             end associate
         end do
@@ -73,7 +73,7 @@ contains
 
     !> check
     subroutine check(self)
-        class(nnps_quadtree), intent(in) :: self
+        class(nnps_octree), intent(in) :: self
 
         associate (max => maxval(self%loc, 2), &
                    min => maxval(self%loc, 2))
@@ -81,11 +81,11 @@ contains
                 max(2) > self%tree%boundary%top .or. &
                 min(1) < self%tree%boundary%left .or. &
                 min(2) < self%tree%boundary%bottom) then
-                error stop 'nnps_tree2d: out of range'
+                error stop 'nnps_tree3d: out of range'
             end if
         end associate
 
     end subroutine check
 
-end module nnps_tree2d_module
+end module nnps_tree3d_module
 

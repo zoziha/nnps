@@ -12,6 +12,6 @@ source: true
 ---
 
 ![Language](https://img.shields.io/badge/-Fortran-734f96?logo=fortran&logoColor=white)
-[![license](https://img.shields.io/badge/License-MIT-brightgreen)](LICENSE)
+[![license](https://img.shields.io/badge/License-MIT-pink)](LICENSE)
 
 NNPS scheme practice in CFD particle method.

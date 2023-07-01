@@ -39,8 +39,8 @@ contains
         class(circle), intent(in) :: self
         real(rk), intent(in) :: x(2)
         real(rk) :: r
-    
-        call  distance2d(self%center, x, r)
+
+        call distance2d(self%center, x, r)
         circle_contain = r < self%radius
 
     end function circle_contain

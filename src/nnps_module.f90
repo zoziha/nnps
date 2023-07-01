@@ -7,6 +7,7 @@ module nnps_module
     use nnps_direct3d_module, only: nnps_direct3d
     use nnps_tree1d_module, only: nnps_binarytree
     use nnps_tree2d_module, only: nnps_quadtree
+    use nnps_tree3d_module, only: nnps_octree
     implicit none
 
 end module nnps_module
