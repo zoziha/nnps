@@ -1,3 +1,5 @@
+! tree1d has bugs in gfortran using release mode, which is related to gfortran,
+! unfortunately, I can't register gcc-bugzilla account very well.
 program example_tree1d
 
     use nnps_module, only: nnps_binarytree, rk
