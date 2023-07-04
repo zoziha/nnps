@@ -25,7 +25,7 @@ contains
         class(binarytree), intent(inout) :: self
         real(rk), intent(in) :: left, right
 
-        call self%points%init()
+        call self%points%init(1)
         self%boundary = line(left, right)
 
     end subroutine init

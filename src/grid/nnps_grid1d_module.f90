@@ -37,7 +37,7 @@ contains
 
         associate (ik => ceiling((self%max - self%min)/radius))
             allocate (self%grids(ik))
-            call self%grids(:)%init()
+            call self%grids(:)%init(8)
         end associate
 
     end subroutine init

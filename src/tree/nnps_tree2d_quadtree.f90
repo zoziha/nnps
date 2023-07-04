@@ -25,7 +25,7 @@ contains
         class(quadtree), intent(inout) :: self
         real(rk), intent(in) :: left, right, top, bottom
 
-        call self%points%init()
+        call self%points%init(1)
         self%boundary = rectangle(left, right, top, bottom)
 
     end subroutine init

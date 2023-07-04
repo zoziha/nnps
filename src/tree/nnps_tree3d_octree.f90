@@ -25,7 +25,7 @@ contains
         class(octree), intent(inout) :: self
         real(rk), intent(in) :: left, right, top, bottom, front, back
 
-        call self%points%init()
+        call self%points%init(1)
         self%boundary = cuboid(left, right, top, bottom, front, back)
 
     end subroutine init
