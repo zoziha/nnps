@@ -40,7 +40,7 @@ contains
 
         associate (ik => ceiling((self%max - self%min)/radius))
             allocate (self%grids(ik(1), ik(2)))
-            call self%grids(:, :)%init()
+            call self%grids(:, :)%init(8)
         end associate
 
     end subroutine init
@@ -53,6 +53,7 @@ contains
         call self%check()
         self%grids%len = 0
 
+        !$omp parallel do private(i) schedule(dynamic)
         do i = 1, size(self%loc, 2)
             associate (ik => ceiling((self%loc(:, i) - self%min)/self%radius))
                 call self%grids(ik(1), ik(2))%push(i)
@@ -70,6 +71,7 @@ contains
 
         self%pairs%len = 0
 
+        !$omp parallel do private(i, j, k, l) schedule(dynamic)
         do j = 1, size(self%grids, 2) - 1
             do i = 2, size(self%grids, 1) - 1
 
@@ -109,8 +111,10 @@ contains
             call distance2d(self%loc(:, self%grids(i, j)%items(k)), &
                             self%loc(:, self%grids(ik, jk)%items(l)), r)
             if (r < radius) then
+                !$omp critical
                 call pairs%push(self%grids(i, j)%items(k))
                 call pairs%push(self%grids(ik, jk)%items(l))
+                !$omp end critical
             end if
 
         end subroutine pairing
