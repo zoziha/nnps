@@ -53,10 +53,12 @@ contains
         call self%check()
         self%grids%len = 0
 
-        !$omp parallel do private(i) schedule(dynamic)
+        !$omp parallel do private(i) if (size(self%loc, 2) > 50000) num_threads(2)
         do i = 1, size(self%loc, 2)
             associate (ik => ceiling((self%loc(:, i) - self%min)/self%radius))
+                !$omp critical
                 call self%grids(ik(1), ik(2))%push(i)
+                !$omp end critical
             end associate
         end do
 
@@ -71,7 +73,7 @@ contains
 
         self%pairs%len = 0
 
-        !$omp parallel do private(i, j, k, l) schedule(dynamic)
+        !$omp parallel do private(i, j, k, l) schedule(dynamic) num_threads(2)
         do j = 1, size(self%grids, 2) - 1
             do i = 2, size(self%grids, 1) - 1
 
@@ -103,7 +105,7 @@ contains
 
     contains
 
-        pure subroutine pairing(i, j, ik, jk, k, l, pairs)
+        subroutine pairing(i, j, ik, jk, k, l, pairs)
             integer, intent(in) :: i, j, ik, jk, k, l
             type(vector), intent(inout) :: pairs
             real(rk) :: r
