@@ -80,8 +80,8 @@ contains
         if (.not. range%intersect(self%boundary)) return
 
         if (self%points%len > 0) then
-            if (range%contain(loc(:, self%points%items(1)))) then
-                if (self%points%items(1) > i) then
+            if (self%points%items(1) > i) then
+                if (range%contain(loc(:, self%points%items(1)))) then
                     call pairs%push(i)
                     call pairs%push(self%points%items(1))
                 end if

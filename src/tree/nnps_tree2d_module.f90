@@ -3,7 +3,6 @@ module nnps_tree2d_module
 
     use nnps_kinds, only: rk
     use nnps_vector, only: vector
-    use nnps_math, only: distance2d
     use nnps_tree2d_quadtree, only: quadtree
     use nnps_tree2d_shape, only: circle
     implicit none
