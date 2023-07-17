@@ -48,7 +48,8 @@ contains
         integer, allocatable :: tmp(:)
         real(rk), allocatable :: rtmp(:)
 
-        allocate (tmp(size(self%items)), rtmp(size(self%items)))
+        self%cap = 2*self%cap
+        allocate (tmp(size(self%items)), rtmp(size(self%ritems)))
         self%items = [self%items, tmp]
         self%ritems = [self%ritems, rtmp]
 
