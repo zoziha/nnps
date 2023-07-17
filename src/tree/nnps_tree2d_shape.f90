@@ -35,13 +35,13 @@ contains
     end function rectangle_contain
 
     !> judgy contain
-    pure logical function circle_contain(self, x)
+    logical function circle_contain(self, x, rdx)
         class(circle), intent(in) :: self
         real(rk), intent(in) :: x(2)
-        real(rk) :: r
+        real(rk), intent(out) :: rdx(3)
 
-        call distance2d(self%center, x, r)
-        circle_contain = r < self%radius
+        call distance2d(self%center, x, rdx(1), rdx(2:3))
+        circle_contain = rdx(1) < self%radius
 
     end function circle_contain
 

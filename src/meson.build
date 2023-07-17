@@ -18,6 +18,7 @@ filenames = [
     'utils/nnps_kinds.F90',
     'utils/nnps_math.f90',
     'utils/nnps_vector.f90',
+    'utils/nnps_int_vector.f90',
 ]
 
 nnps_lib = library(

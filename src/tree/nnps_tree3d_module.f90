@@ -1,4 +1,4 @@
-!> octave tree search
+!> 3D octave tree search
 module nnps_tree3d_module
 
     use nnps_kinds, only: rk
@@ -24,14 +24,14 @@ module nnps_tree3d_module
 contains
 
     !> initialize
-    subroutine init(self, loc, min, max, len)
+    subroutine init(self, loc, min, max, cap)
         class(nnps_octree), intent(inout) :: self
         real(rk), dimension(:, :), intent(in), target :: loc
         real(rk), intent(in), dimension(3) :: min, max
-        integer, intent(in), optional :: len
+        integer, intent(in), optional :: cap
 
         self%loc => loc
-        call self%pairs%init(len)
+        call self%pairs%init(3, cap)
         call self%tree%init(min(1), max(1), max(2), min(2), max(3), min(3))
 
     end subroutine init
@@ -54,10 +54,11 @@ contains
     end subroutine build
 
     !> query
-    subroutine query(self, radius, pairs)
+    subroutine query(self, radius, pairs, rdxs)
         class(nnps_octree), intent(inout), target :: self
         real(rk), intent(in) :: radius
         integer, dimension(:), pointer :: pairs
+        real(rk), dimension(:), pointer :: rdxs
         integer :: i
 
         self%pairs%len = 0
@@ -68,7 +69,8 @@ contains
             end associate
         end do
 
-        pairs => self%pairs%items(1:self%pairs%len)
+        pairs => self%pairs%items(1:self%pairs%len*2)
+        rdxs => self%pairs%ritems(1:self%pairs%len*4)
 
     end subroutine query
 

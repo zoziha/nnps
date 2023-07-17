@@ -4,6 +4,7 @@ module nnps_tree3d_octree
     use nnps_kinds, only: rk
     use nnps_tree3d_shape, only: sphere, cuboid
     use nnps_vector, only: vector
+    use nnps_int_vector, only: int_vector
     implicit none
 
     private
@@ -13,7 +14,7 @@ module nnps_tree3d_octree
     type octree
         type(cuboid) :: boundary  !! boundary
         type(octree), allocatable :: children(:)  !! leef
-        type(vector) :: points  !! points
+        type(int_vector) :: points  !! points
     contains
         procedure :: init, add, divide, query, clear
     end type octree
@@ -81,14 +82,14 @@ contains
         integer, intent(in) :: i
         type(vector), intent(inout) :: pairs
         integer :: j
+        real(rk) :: rdx(4)
 
         if (.not. range%intersect(self%boundary)) return
 
         if (self%points%len > 0) then
             if (self%points%items(1) > i) then
-                if (range%contain(loc(:, self%points%items(1)))) then
-                    call pairs%push(i)
-                    call pairs%push(self%points%items(1))
+                if (range%contain(loc(:, self%points%items(1)), rdx)) then
+                    call pairs%push([i, self%points%items(1)], rdx)
                 end if
             end if
         end if

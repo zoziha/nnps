@@ -20,39 +20,40 @@ module nnps_direct3d_module
 contains
 
     !> initialize
-    subroutine init(self, loc, len)
+    subroutine init(self, loc, cap)
         class(nnps_direct3d), intent(inout) :: self
         real(rk), intent(in), target :: loc(:, :)
-        integer, intent(in), optional :: len
+        integer, intent(in), optional :: cap
 
         self%loc => loc
-        call self%pairs%init(len)
+        call self%pairs%init(3, cap)
 
     end subroutine init
 
     !> query
-    subroutine query(self, radius, pairs)
+    subroutine query(self, radius, pairs, rdxs)
         class(nnps_direct3d), intent(inout), target :: self
         real(rk), intent(in) :: radius  !! query radius
         integer, pointer :: pairs(:)  !! particle pairs
+        real(rk), dimension(:), pointer :: rdxs
         integer :: i, j
-        real(rk) :: r
+        real(rk) :: rdx(4)
 
         self%pairs%len = 0
 
         do i = 1, size(self%loc, 2) - 1
             do j = i + 1, size(self%loc, 2)
 
-                call distance3d(self%loc(:, i), self%loc(:, j), r)
-                if (r < radius) then
-                    call self%pairs%push(i)
-                    call self%pairs%push(j)
+                call distance3d(self%loc(:, i), self%loc(:, j), rdx(1), rdx(2:4))
+                if (rdx(1) < radius) then
+                    call self%pairs%push([i, j], rdx)
                 end if
 
             end do
         end do
 
-        pairs => self%pairs%items(1:self%pairs%len)
+        pairs => self%pairs%items(1:self%pairs%len*2)
+        rdxs => self%pairs%ritems(1:self%pairs%len*4)
 
     end subroutine query
 

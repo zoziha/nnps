@@ -1,8 +1,9 @@
-!> background grid method
+!> 1D background grid method
 module nnps_grid1d_module
 
     use nnps_kinds, only: rk
     use nnps_vector, only: vector
+    use nnps_int_vector, only: int_vector
     use nnps_math, only: distance1d, sqrt_eps
     implicit none
 
@@ -12,7 +13,7 @@ module nnps_grid1d_module
     !> 1D grid
     type nnps_grid1d
         real(rk), pointer :: loc(:)  !! particle 1d coordinate
-        type(vector), allocatable :: grids(:)  !! background grids
+        type(int_vector), allocatable :: grids(:)  !! background grids
         type(vector) :: pairs  !! particle pairs
         real(rk), private :: min, max, radius
     contains
@@ -23,14 +24,14 @@ module nnps_grid1d_module
 contains
 
     !> initialize
-    subroutine init(self, loc, min, max, radius, len)
+    subroutine init(self, loc, min, max, radius, cap)
         class(nnps_grid1d), intent(inout) :: self
         real(rk), dimension(:), intent(in), target :: loc
         real(rk), intent(in) :: min, max, radius
-        integer, intent(in), optional :: len
+        integer, intent(in), optional :: cap
 
         self%loc => loc
-        call self%pairs%init(len)
+        call self%pairs%init(1, cap)
         self%min = min - radius - sqrt_eps
         self%max = max
         self%radius = radius
@@ -59,12 +60,13 @@ contains
     end subroutine build
 
     !> query
-    subroutine query(self, radius, pairs)
+    subroutine query(self, radius, pairs, rdxs)
         class(nnps_grid1d), intent(inout), target :: self
         real(rk), intent(in) :: radius
         integer, dimension(:), pointer :: pairs
+        real(rk), pointer, dimension(:) :: rdxs
         integer :: i, j, k
-        real(rk) :: r
+        real(rk) :: rdx(2)
 
         self%pairs%len = 0
 
@@ -72,23 +74,22 @@ contains
             if (self%grids(i)%len == 0) cycle
             do j = 1, self%grids(i)%len
                 do k = j + 1, self%grids(i)%len
-                    call distance1d(self%loc(self%grids(i)%items(j)), self%loc(self%grids(i)%items(k)), r)
-                    if (r < radius) then
-                        call self%pairs%push(self%grids(i)%items(j))
-                        call self%pairs%push(self%grids(i)%items(k))
+                    call distance1d(self%loc(self%grids(i)%items(j)), self%loc(self%grids(i)%items(k)), rdx(1), rdx(2))
+                    if (rdx(1) < radius) then
+                        call self%pairs%push([self%grids(i)%items(j), self%grids(i)%items(k)], rdx)
                     end if
                 end do
                 do k = 1, self%grids(i - 1)%len
-                    call distance1d(self%loc(self%grids(i)%items(j)), self%loc(self%grids(i - 1)%items(k)), r)
-                    if (r < radius) then
-                        call self%pairs%push(self%grids(i)%items(j))
-                        call self%pairs%push(self%grids(i - 1)%items(k))
+                    call distance1d(self%loc(self%grids(i)%items(j)), self%loc(self%grids(i - 1)%items(k)), rdx(1), rdx(2))
+                    if (rdx(1) < radius) then
+                        call self%pairs%push([self%grids(i)%items(j), self%grids(i - 1)%items(k)], rdx)
                     end if
                 end do
             end do
         end do
 
-        pairs => self%pairs%items(1:self%pairs%len)
+        pairs => self%pairs%items(1:self%pairs%len*2)
+        rdxs => self%pairs%ritems(1:self%pairs%len*2)
 
     end subroutine query
 

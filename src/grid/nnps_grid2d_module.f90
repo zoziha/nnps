@@ -1,8 +1,9 @@
-!> background grid method
+!> 2D background grid method
 module nnps_grid2d_module
 
     use nnps_kinds, only: rk
     use nnps_vector, only: vector
+    use nnps_int_vector, only: int_vector
     use nnps_math, only: distance2d, sqrt_eps
     implicit none
 
@@ -12,7 +13,7 @@ module nnps_grid2d_module
     !> 2d grid
     type nnps_grid2d
         real(rk), pointer :: loc(:, :)  !! particle 2d coordinate
-        type(vector), allocatable :: grids(:, :)  !! background grids
+        type(int_vector), allocatable :: grids(:, :)  !! background grids
         type(vector) :: pairs  !! particle pairs
         real(rk), dimension(2), private :: min, max
         real(rk), private :: radius
@@ -24,15 +25,15 @@ module nnps_grid2d_module
 contains
 
     !> initialize
-    subroutine init(self, loc, min, max, radius, len)
+    subroutine init(self, loc, min, max, radius, cap)
         class(nnps_grid2d), intent(inout) :: self
         real(rk), dimension(:, :), intent(in), target :: loc
         real(rk), dimension(2), intent(in) :: min, max
         real(rk), intent(in) :: radius
-        integer, intent(in), optional :: len
+        integer, intent(in), optional :: cap
 
         self%loc => loc
-        call self%pairs%init(len)
+        call self%pairs%init(2, cap)
         self%min(1) = min(1) - radius - sqrt_eps    ! setup empty grids at the boundary
         self%min(2) = min(2) - sqrt_eps
         self%max = max + radius                     ! setup empty grids at the boundary
@@ -62,10 +63,11 @@ contains
     end subroutine build
 
     !> query
-    subroutine query(self, radius, pairs)
+    subroutine query(self, radius, pairs, rdxs)
         class(nnps_grid2d), intent(inout), target :: self
         real(rk), intent(in) :: radius
         integer, dimension(:), pointer :: pairs
+        real(rk), pointer, dimension(:) :: rdxs
         integer :: i, j, k, l
 
         self%pairs%len = 0
@@ -97,20 +99,20 @@ contains
             end do
         end do
 
-        pairs => self%pairs%items(1:self%pairs%len)
+        pairs => self%pairs%items(1:self%pairs%len*2)
+        rdxs => self%pairs%ritems(1:self%pairs%len*3)
 
     contains
 
         subroutine pairing(i, j, ik, jk, k, l, pairs)
             integer, intent(in) :: i, j, ik, jk, k, l
             type(vector), intent(inout) :: pairs
-            real(rk) :: r
+            real(rk) :: rdx(3)
 
             call distance2d(self%loc(:, self%grids(i, j)%items(k)), &
-                            self%loc(:, self%grids(ik, jk)%items(l)), r)
-            if (r < radius) then
-                call pairs%push(self%grids(i, j)%items(k))
-                call pairs%push(self%grids(ik, jk)%items(l))
+                            self%loc(:, self%grids(ik, jk)%items(l)), rdx(1), rdx(2:3))
+            if (rdx(1) < radius) then
+                call pairs%push([self%grids(i, j)%items(k), self%grids(ik, jk)%items(l)], rdx)
             end if
 
         end subroutine pairing

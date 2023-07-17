@@ -3,7 +3,7 @@ project: NNPS
 summary: 🚥 Nearest Neighbor Particle Search
 preprocess: false
 page_dir: ford
-output_dir: build/ford
+output_dir: _build/ford
 author: ZUO Zhihua
 email: zuo.zhihua@qq.com
 website: https://gitee.com/zoziha

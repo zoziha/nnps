@@ -36,13 +36,13 @@ contains
     end function cuboid_contain
 
     !> judgy contain
-    pure logical function sphere_contain(self, x)
+    logical function sphere_contain(self, x, rdx)
         class(sphere), intent(in) :: self
         real(rk), intent(in) :: x(3)
-        real(rk) :: r
+        real(rk), intent(out) :: rdx(4)
 
-        call distance3d(self%center, x, r)
-        sphere_contain = r < self%radius
+        call distance3d(self%center, x, rdx(1), rdx(2:4))
+        sphere_contain = rdx(1) < self%radius
 
     end function sphere_contain
 

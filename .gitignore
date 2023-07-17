@@ -1,3 +1,5 @@
 .vscode/*
 .vs/*
 x64/*
+*.fdz
+*.u2d
