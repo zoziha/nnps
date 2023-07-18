@@ -70,7 +70,7 @@ contains
         real(rk), intent(in) :: radius
         integer, dimension(:), pointer, intent(out) :: pairs
         real(rk), pointer, dimension(:), intent(out) :: rdxs
-        integer :: i, j, k, l
+        integer :: i, j
 
         self%pairs%len = 0
 

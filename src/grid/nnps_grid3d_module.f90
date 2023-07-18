@@ -15,6 +15,7 @@ module nnps_grid3d_module
         real(rk), pointer :: loc(:, :)  !! particle 3d coordinate
         type(int_vector), allocatable :: grids(:, :, :)  !! background grids
         type(vector) :: pairs  !! particle pairs
+        type(int_vector), private :: found  !! found particles
         real(rk), dimension(3), private :: min, max
         real(rk), private :: radius
     contains
@@ -34,9 +35,10 @@ contains
 
         self%loc => loc
         call self%pairs%init(3, cap)
-        self%min(1:2) = min(1:2) - radius - sqrt_eps    ! setup empty grids at the boundary
-        self%min(3) = min(3) - sqrt_eps
-        self%max = max + radius                         ! setup empty grids at the boundary
+        call self%found%init(8*13)
+        self%min = min - radius - sqrt_eps    ! setup empty grids at the boundary
+        self%max(1:2) = max(1:2) + radius                         ! setup empty grids at the boundary
+        self%max(3) = max(3)
         self%radius = radius
 
         associate (ik => ceiling((self%max - self%min)/radius))
@@ -63,68 +65,36 @@ contains
     end subroutine build
 
     !> query
-    subroutine query(self, radius, pairs, rdxs)
+    pure subroutine query(self, radius, pairs, rdxs)
         class(nnps_grid3d), intent(inout), target :: self
         real(rk), intent(in) :: radius
-        integer, dimension(:), pointer :: pairs
-        real(rk), dimension(:), pointer :: rdxs
+        integer, dimension(:), pointer, intent(out) :: pairs
+        real(rk), dimension(:), pointer, intent(out) :: rdxs
         integer :: i, j, k, l, m
 
         self%pairs%len = 0
 
-        do k = 1, size(self%grids, 3) - 1
+        ! 3D U style
+        do k = 2, size(self%grids, 3)
             do j = 2, size(self%grids, 2) - 1
                 do i = 2, size(self%grids, 1) - 1
 
                     if (self%grids(i, j, k)%len == 0) cycle
-                    do l = 1, self%grids(i, j, k)%len
+                    self%found%len = 0
 
-                        do m = l + 1, self%grids(i, j, k)%len
-                            call pairing(i, j, k, i, j, k, l, m, self%pairs)
+                    ! 3D L style, 13 neighbors (9 + 4)
+                    do m = j - 1, j + 1
+                        do l = i - 1, i + 1
+                            call self%found%merge(self%grids(l, m, k - 1))
                         end do
-
-                        do m = 1, self%grids(i - 1, j + 1, k)%len
-                            call pairing(i, j, k, i - 1, j + 1, k, l, m, self%pairs)
-                        end do
-                        do m = 1, self%grids(i, j + 1, k)%len
-                            call pairing(i, j, k, i, j + 1, k, l, m, self%pairs)
-                        end do
-                        do m = 1, self%grids(i + 1, j + 1, k)%len
-                            call pairing(i, j, k, i + 1, j + 1, k, l, m, self%pairs)
-                        end do
-                        do m = 1, self%grids(i + 1, j, k)%len
-                            call pairing(i, j, k, i + 1, j, k, l, m, self%pairs)
-                        end do
-
-                        do m = 1, self%grids(i - 1, j - 1, k + 1)%len
-                            call pairing(i, j, k, i - 1, j - 1, k + 1, l, m, self%pairs)
-                        end do
-                        do m = 1, self%grids(i, j - 1, k + 1)%len
-                            call pairing(i, j, k, i, j - 1, k + 1, l, m, self%pairs)
-                        end do
-                        do m = 1, self%grids(i + 1, j - 1, k + 1)%len
-                            call pairing(i, j, k, i + 1, j - 1, k + 1, l, m, self%pairs)
-                        end do
-                        do m = 1, self%grids(i - 1, j, k + 1)%len
-                            call pairing(i, j, k, i - 1, j, k + 1, l, m, self%pairs)
-                        end do
-                        do m = 1, self%grids(i, j, k + 1)%len
-                            call pairing(i, j, k, i, j, k + 1, l, m, self%pairs)
-                        end do
-                        do m = 1, self%grids(i + 1, j, k + 1)%len
-                            call pairing(i, j, k, i + 1, j, k + 1, l, m, self%pairs)
-                        end do
-                        do m = 1, self%grids(i - 1, j + 1, k + 1)%len
-                            call pairing(i, j, k, i - 1, j + 1, k + 1, l, m, self%pairs)
-                        end do
-                        do m = 1, self%grids(i, j + 1, k + 1)%len
-                            call pairing(i, j, k, i, j + 1, k + 1, l, m, self%pairs)
-                        end do
-                        do m = 1, self%grids(i + 1, j + 1, k + 1)%len
-                            call pairing(i, j, k, i + 1, j + 1, k + 1, l, m, self%pairs)
-                        end do
-
                     end do
+
+                    call self%found%merge(self%grids(i - 1, j - 1, k))
+                    call self%found%merge(self%grids(i, j - 1, k))
+                    call self%found%merge(self%grids(i + 1, j - 1, k))
+                    call self%found%merge(self%grids(i - 1, j, k))
+
+                    call find_nearby_particles(self%grids(i, j, k), self%found, self%pairs)
 
                 end do
             end do
@@ -135,18 +105,33 @@ contains
 
     contains
 
-        pure subroutine pairing(i, j, k, ik, jk, kk, l, m, pairs)
-            integer, intent(in) :: i, j, k, ik, jk, kk, l, m
+        pure subroutine find_nearby_particles(grid, found, pairs)
+            type(int_vector), intent(in) :: grid, found
             type(vector), intent(inout) :: pairs
+            integer :: ii, jj
             real(rk) :: rdx(4)
 
-            call distance3d(self%loc(:, self%grids(i, j, k)%items(l)), &
-                            self%loc(:, self%grids(ik, jk, kk)%items(m)), rdx(1), rdx(2:4))
-            if (rdx(1) < radius) then
-                call pairs%push([self%grids(i, j, k)%items(l), self%grids(ik, jk, kk)%items(m)], rdx)
-            end if
+            do ii = 1, grid%len
 
-        end subroutine pairing
+                do jj = ii + 1, grid%len
+                    call distance3d(self%loc(:, grid%items(ii)), &
+                                    self%loc(:, grid%items(jj)), rdx(1), rdx(2:4))
+                    if (rdx(1) < radius) then
+                        call pairs%push([grid%items(ii), grid%items(jj)], rdx)
+                    end if
+                end do
+
+                do jj = 1, found%len
+                    call distance3d(self%loc(:, grid%items(ii)), &
+                                    self%loc(:, found%items(jj)), rdx(1), rdx(2:4))
+                    if (rdx(1) < radius) then
+                        call pairs%push([grid%items(ii), found%items(jj)], rdx)
+                    end if
+                end do
+
+            end do
+
+        end subroutine find_nearby_particles
 
     end subroutine query
 
