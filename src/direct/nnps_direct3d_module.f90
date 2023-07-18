@@ -41,6 +41,7 @@ contains
 
         self%pairs%len = 0
 
+        !$omp parallel do private(i, j, rdx)
         do i = 1, size(self%loc, 2) - 1
             do j = i + 1, size(self%loc, 2)
 

@@ -62,6 +62,7 @@ contains
 
         self%pairs%len = 0
 
+        !$omp parallel do private(i)
         do i = 1, size(self%loc, 2)
             associate (range => circle(self%loc(:, i), radius))
                 call self%tree%query(self%loc, range, i, self%pairs)

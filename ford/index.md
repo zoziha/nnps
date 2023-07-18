@@ -6,7 +6,7 @@ This repository contains the source code for nearest neighbor particle search us
 
 * direct search (\\(O(n^2/2)\\));
 * kd-tree search (\\(O(nlogn)\\));
-* grid search (\\(O(n)\\)).
+* grid search (\\(O(n)\\)) `(good)`.
 
 For optimization purposes: Since distance solving will be involved in NNPS,
 and distance solving is needed in other solving processes in CFD particle method,
@@ -14,8 +14,7 @@ in order to reduce the amount of computation,the distances obtained from solving
 in the data structure of this warehouse in order to improve the efficiency as much as possible.
 The distances stored are the line distance and the axis component of the line distance.
 
-@todo
-Adding OMP parallel computing to particle search for large datasets.
+Simple OpenMP parallelism `<unstable/non-tested>` is already supported.
 
 @note
 The direct search method is relatively simple because it does not require the construction of data structures;

@@ -11,6 +11,7 @@ auto-examples = true
 [dev-dependencies]
 test-drive = { git = "https://github.com/fortran-lang/test-drive", tag = "v0.4.0" }
 display = { git = "https://gitee.com/zoziha/display" }
+openmp = "*"
 
 [install]
 library = true

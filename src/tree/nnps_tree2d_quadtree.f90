@@ -84,7 +84,9 @@ contains
         if (self%points%len > 0) then
             if (self%points%items(1) > i) then
                 if (range%contain(loc(:, self%points%items(1)), rdx)) then
+                    !$omp critical
                     call pairs%push([i, self%points%items(1)], rdx)
+                    !$omp end critical
                 end if
             end if
         end if

@@ -15,7 +15,6 @@ module nnps_grid3d_module
         real(rk), pointer :: loc(:, :)  !! particle 3d coordinate
         type(int_vector), allocatable :: grids(:, :, :)  !! background grids
         type(vector) :: pairs  !! particle pairs
-        type(int_vector), private :: found  !! found particles
         real(rk), dimension(3), private :: min, max
         real(rk), private :: radius
     contains
@@ -35,7 +34,6 @@ contains
 
         self%loc => loc
         call self%pairs%init(3, cap)
-        call self%found%init(8*13)
         self%min = min - radius - sqrt_eps    ! setup empty grids at the boundary
         self%max(1:2) = max(1:2) + radius                         ! setup empty grids at the boundary
         self%max(3) = max(3)
@@ -65,7 +63,7 @@ contains
     end subroutine build
 
     !> query
-    pure subroutine query(self, radius, pairs, rdxs)
+    subroutine query(self, radius, pairs, rdxs)
         class(nnps_grid3d), intent(inout), target :: self
         real(rk), intent(in) :: radius
         integer, dimension(:), pointer, intent(out) :: pairs
@@ -75,26 +73,29 @@ contains
         self%pairs%len = 0
 
         ! 3D U style
+        !$omp parallel do private(i, j, k, l, m)
         do k = 2, size(self%grids, 3)
             do j = 2, size(self%grids, 2) - 1
                 do i = 2, size(self%grids, 1) - 1
 
                     if (self%grids(i, j, k)%len == 0) cycle
-                    self%found%len = 0
 
                     ! 3D L style, 13 neighbors (9 + 4)
-                    do m = j - 1, j + 1
-                        do l = i - 1, i + 1
-                            call self%found%merge(self%grids(l, m, k - 1))
-                        end do
-                    end do
-
-                    call self%found%merge(self%grids(i - 1, j - 1, k))
-                    call self%found%merge(self%grids(i, j - 1, k))
-                    call self%found%merge(self%grids(i + 1, j - 1, k))
-                    call self%found%merge(self%grids(i - 1, j, k))
-
-                    call find_nearby_particles(self%grids(i, j, k), self%found, self%pairs)
+                    call find_nearby_particles(self%grids(i, j, k), &
+                        &[self%grids(i - 1, j - 1, k - 1)%items(1:self%grids(i - 1, j - 1, k - 1)%len), &
+                        & self%grids(i, j - 1, k - 1)%items(1:self%grids(i, j - 1, k - 1)%len), &
+                        & self%grids(i + 1, j - 1, k - 1)%items(1:self%grids(i + 1, j - 1, k - 1)%len), &
+                        & self%grids(i - 1, j, k - 1)%items(1:self%grids(i - 1, j, k - 1)%len), &
+                        & self%grids(i, j, k - 1)%items(1:self%grids(i, j, k - 1)%len), &
+                        & self%grids(i + 1, j, k - 1)%items(1:self%grids(i + 1, j, k - 1)%len), &
+                        & self%grids(i - 1, j + 1, k - 1)%items(1:self%grids(i - 1, j + 1, k - 1)%len), &
+                        & self%grids(i, j + 1, k - 1)%items(1:self%grids(i, j + 1, k - 1)%len), &
+                        & self%grids(i + 1, j + 1, k - 1)%items(1:self%grids(i + 1, j + 1, k - 1)%len), &
+                        & self%grids(i - 1, j - 1, k)%items(1:self%grids(i - 1, j - 1, k)%len), &
+                        & self%grids(i, j - 1, k)%items(1:self%grids(i, j - 1, k)%len), &
+                        & self%grids(i + 1, j - 1, k)%items(1:self%grids(i + 1, j - 1, k)%len), &
+                        & self%grids(i - 1, j, k)%items(1:self%grids(i - 1, j, k)%len) &
+                        ], self%pairs)
 
                 end do
             end do
@@ -105,8 +106,9 @@ contains
 
     contains
 
-        pure subroutine find_nearby_particles(grid, found, pairs)
-            type(int_vector), intent(in) :: grid, found
+        subroutine find_nearby_particles(grid, found, pairs)
+            type(int_vector), intent(in) :: grid
+            integer, intent(in) :: found(:)
             type(vector), intent(inout) :: pairs
             integer :: ii, jj
             real(rk) :: rdx(4)
@@ -117,15 +119,19 @@ contains
                     call distance3d(self%loc(:, grid%items(ii)), &
                                     self%loc(:, grid%items(jj)), rdx(1), rdx(2:4))
                     if (rdx(1) < radius) then
+                        !$omp critical
                         call pairs%push([grid%items(ii), grid%items(jj)], rdx)
+                        !$omp end critical
                     end if
                 end do
 
-                do jj = 1, found%len
+                do jj = 1, size(found)
                     call distance3d(self%loc(:, grid%items(ii)), &
-                                    self%loc(:, found%items(jj)), rdx(1), rdx(2:4))
+                                    self%loc(:, found(jj)), rdx(1), rdx(2:4))
                     if (rdx(1) < radius) then
-                        call pairs%push([grid%items(ii), found%items(jj)], rdx)
+                        !$omp critical
+                        call pairs%push([grid%items(ii), found(jj)], rdx)
+                        !$omp end critical
                     end if
                 end do
 

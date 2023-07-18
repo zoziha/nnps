@@ -26,6 +26,7 @@ nnps_lib = library(
     sources: files(filenames),
     version: meson.project_version(),
     install: true,
+    dependencies: dependency('openmp'),
 )
 
 nnps_inc = nnps_lib.private_dir_include()

@@ -12,7 +12,7 @@ module nnps_int_vector
         integer, allocatable :: items(:)  !! 整型数组
     contains
         procedure :: init
-        procedure :: push, merge
+        procedure :: push
         procedure :: clear
         procedure, private :: extend
     end type int_vector
@@ -56,21 +56,6 @@ contains
         self%items(self%len) = item
 
     end subroutine push
-
-    !> 合并向量
-    pure subroutine merge(self, that)
-        class(int_vector), intent(inout) :: self
-        type(int_vector), intent(in) :: that
-
-        if (that%len == 0) return
-        do while (self%len + that%len > size(self%items))
-            call self%extend()
-        end do
-
-        self%items(self%len + 1:self%len + that%len) = that%items(:that%len)
-        self%len = self%len + that%len
-
-    end subroutine merge
 
     !> 向量清空
     pure subroutine clear(self)

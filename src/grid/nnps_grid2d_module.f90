@@ -15,7 +15,6 @@ module nnps_grid2d_module
         real(rk), pointer :: loc(:, :)  !! particle 2d coordinate
         type(int_vector), allocatable :: grids(:, :)  !! background grids
         type(vector) :: pairs  !! particle pairs
-        type(int_vector), private :: found  !! found particles
         real(rk), dimension(2), private :: min, max
         real(rk), private :: radius
     contains
@@ -35,7 +34,6 @@ contains
 
         self%loc => loc
         call self%pairs%init(2, cap)
-        call self%found%init(8*4)
         self%min = min - sqrt_eps - radius  ! setup empty grids at the boundary
         self%max(1) = max(1) + radius  ! setup empty grids at the boundary
         self%max(2) = max(2)
@@ -65,7 +63,7 @@ contains
     end subroutine build
 
     !> query
-    pure subroutine query(self, radius, pairs, rdxs)
+    subroutine query(self, radius, pairs, rdxs)
         class(nnps_grid2d), intent(inout), target :: self
         real(rk), intent(in) :: radius
         integer, dimension(:), pointer, intent(out) :: pairs
@@ -75,18 +73,18 @@ contains
         self%pairs%len = 0
 
         ! U style
+        !$omp parallel do private(i, j)
         do j = 2, size(self%grids, 2)
             do i = 2, size(self%grids, 1) - 1
 
                 if (self%grids(i, j)%len == 0) cycle
-                self%found%len = 0
 
-                ! L style, 4 neighbors                            !          ___________
-                call self%found%merge(self%grids(i - 1, j - 1))   !  - - -   | |     | |
-                call self%found%merge(self%grids(i, j - 1))       !  x o -   | |     | |
-                call self%found%merge(self%grids(i + 1, j - 1))   !  x x x   | |_____| |
-                call self%found%merge(self%grids(i - 1, j))       !          |_________|
-                call find_nearby_particles(self%grids(i, j), self%found, self%pairs)
+                ! L style, 4 neighbors
+                call find_nearby_particles(self%grids(i, j), &                           !          ___________
+                    &[self%grids(i - 1, j - 1)%items(1:self%grids(i - 1, j - 1)%len), &  !  - - -   | |     | |
+                    &self%grids(i, j - 1)%items(1:self%grids(i, j - 1)%len), &           !  x o -   | |     | |
+                    &self%grids(i + 1, j - 1)%items(1:self%grids(i + 1, j - 1)%len), &   !  x x x   | |_____| |
+                    &self%grids(i - 1, j)%items(1:self%grids(i - 1, j)%len)], self%pairs)!          |_________|
 
             end do
         end do
@@ -96,8 +94,9 @@ contains
 
     contains
 
-        pure subroutine find_nearby_particles(grid, found, pairs)
-            type(int_vector), intent(in) :: grid, found
+        subroutine find_nearby_particles(grid, found, pairs)
+            type(int_vector), intent(in) :: grid
+            integer, intent(in) :: found(:)
             type(vector), intent(inout) :: pairs
             integer :: ii, jj
             real(rk) :: rdx(3)
@@ -108,15 +107,19 @@ contains
                     call distance2d(self%loc(:, grid%items(ii)), &
                                     self%loc(:, grid%items(jj)), rdx(1), rdx(2:3))
                     if (rdx(1) < radius) then
+                        !$omp critical
                         call pairs%push([grid%items(ii), grid%items(jj)], rdx)
+                        !$omp end critical
                     end if
                 end do
 
-                do jj = 1, found%len
+                do jj = 1, size(found)
                     call distance2d(self%loc(:, grid%items(ii)), &
-                                    self%loc(:, found%items(jj)), rdx(1), rdx(2:3))
+                                    self%loc(:, found(jj)), rdx(1), rdx(2:3))
                     if (rdx(1) < radius) then
-                        call pairs%push([grid%items(ii), found%items(jj)], rdx)
+                        !$omp critical
+                        call pairs%push([grid%items(ii), found(jj)], rdx)
+                        !$omp end critical
                     end if
                 end do
 
