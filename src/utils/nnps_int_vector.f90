@@ -12,8 +12,7 @@ module nnps_int_vector
         integer, allocatable :: items(:)  !! 整型数组
     contains
         procedure :: init
-        procedure :: push, pop
-        procedure :: get, set
+        procedure :: push, merge
         procedure :: clear
         procedure, private :: extend
     end type int_vector
@@ -58,38 +57,19 @@ contains
 
     end subroutine push
 
-    !> 向量弹出
-    pure subroutine pop(self, item)
+    !> 合并向量
+    pure subroutine merge(self, that)
         class(int_vector), intent(inout) :: self
-        integer, intent(out), optional :: item
+        type(int_vector), intent(in) :: that
 
-        if (self%len == 0) return
-        if (present(item)) item = self%items(self%len)
-        self%len = self%len - 1
+        do while (self%len + that%len > size(self%items))
+            call self%extend()
+        end do
 
-    end subroutine pop
+        self%items(self%len + 1:self%len + that%len) = that%items(:that%len)
+        self%len = self%len + that%len
 
-    !> 向量获取
-    pure subroutine get(self, index, item)
-        class(int_vector), intent(in) :: self
-        integer, intent(in) :: index
-        integer, intent(out) :: item
-
-        if (index < 1 .or. index > self%len) return
-        item = self%items(index)
-
-    end subroutine get
-
-    !> 向量设置
-    pure subroutine set(self, index, item)
-        class(int_vector), intent(inout) :: self
-        integer, intent(in) :: index
-        integer, intent(in) :: item
-
-        if (index < 1 .or. index > self%len) return
-        self%items(index) = item
-
-    end subroutine set
+    end subroutine merge
 
     !> 向量清空
     pure subroutine clear(self)

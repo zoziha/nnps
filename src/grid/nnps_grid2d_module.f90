@@ -15,6 +15,7 @@ module nnps_grid2d_module
         real(rk), pointer :: loc(:, :)  !! particle 2d coordinate
         type(int_vector), allocatable :: grids(:, :)  !! background grids
         type(vector) :: pairs  !! particle pairs
+        type(int_vector), private :: found  !! found particles
         real(rk), dimension(2), private :: min, max
         real(rk), private :: radius
     contains
@@ -24,7 +25,7 @@ module nnps_grid2d_module
 
 contains
 
-    !> initialize
+    !> initialize: U style
     subroutine init(self, loc, min, max, radius, cap)
         class(nnps_grid2d), intent(inout) :: self
         real(rk), dimension(:, :), intent(in), target :: loc
@@ -34,9 +35,10 @@ contains
 
         self%loc => loc
         call self%pairs%init(2, cap)
-        self%min(1) = min(1) - radius - sqrt_eps    ! setup empty grids at the boundary
-        self%min(2) = min(2) - sqrt_eps
-        self%max = max + radius                     ! setup empty grids at the boundary
+        call self%found%init(8*4)
+        self%min = min - sqrt_eps - radius  ! setup empty grids at the boundary
+        self%max(1) = max(1) + radius  ! setup empty grids at the boundary
+        self%max(2) = max(2)
         self%radius = radius
 
         associate (ik => ceiling((self%max - self%min)/radius))
@@ -63,38 +65,28 @@ contains
     end subroutine build
 
     !> query
-    subroutine query(self, radius, pairs, rdxs)
+    pure subroutine query(self, radius, pairs, rdxs)
         class(nnps_grid2d), intent(inout), target :: self
         real(rk), intent(in) :: radius
-        integer, dimension(:), pointer :: pairs
-        real(rk), pointer, dimension(:) :: rdxs
+        integer, dimension(:), pointer, intent(out) :: pairs
+        real(rk), pointer, dimension(:), intent(out) :: rdxs
         integer :: i, j, k, l
 
         self%pairs%len = 0
 
-        do j = 1, size(self%grids, 2) - 1
+        ! U style
+        do j = 2, size(self%grids, 2)
             do i = 2, size(self%grids, 1) - 1
 
                 if (self%grids(i, j)%len == 0) cycle
-                do k = 1, self%grids(i, j)%len
+                self%found%len = 0
 
-                    do l = k + 1, self%grids(i, j)%len
-                        call pairing(i, j, i, j, k, l, self%pairs)
-                    end do
-                    do l = 1, self%grids(i - 1, j + 1)%len
-                        call pairing(i, j, i - 1, j + 1, k, l, self%pairs)
-                    end do
-                    do l = 1, self%grids(i, j + 1)%len
-                        call pairing(i, j, i, j + 1, k, l, self%pairs)
-                    end do
-                    do l = 1, self%grids(i + 1, j + 1)%len
-                        call pairing(i, j, i + 1, j + 1, k, l, self%pairs)
-                    end do
-                    do l = 1, self%grids(i + 1, j)%len
-                        call pairing(i, j, i + 1, j, k, l, self%pairs)
-                    end do
-
-                end do
+                ! L style, 4 neighbors                            !          ___________
+                call self%found%merge(self%grids(i - 1, j - 1))   !  - - -   | |     | |
+                call self%found%merge(self%grids(i, j - 1))       !  x o -   | |     | |
+                call self%found%merge(self%grids(i + 1, j - 1))   !  x x x   | |_____| |
+                call self%found%merge(self%grids(i - 1, j))       !          |_________|
+                call find_nearby_particles(self%grids(i, j), self%found, self%pairs)
 
             end do
         end do
@@ -104,18 +96,33 @@ contains
 
     contains
 
-        subroutine pairing(i, j, ik, jk, k, l, pairs)
-            integer, intent(in) :: i, j, ik, jk, k, l
+        pure subroutine find_nearby_particles(grid, found, pairs)
+            type(int_vector), intent(in) :: grid, found
             type(vector), intent(inout) :: pairs
+            integer :: ii, jj
             real(rk) :: rdx(3)
 
-            call distance2d(self%loc(:, self%grids(i, j)%items(k)), &
-                            self%loc(:, self%grids(ik, jk)%items(l)), rdx(1), rdx(2:3))
-            if (rdx(1) < radius) then
-                call pairs%push([self%grids(i, j)%items(k), self%grids(ik, jk)%items(l)], rdx)
-            end if
+            do ii = 1, grid%len
 
-        end subroutine pairing
+                do jj = ii + 1, grid%len
+                    call distance2d(self%loc(:, grid%items(ii)), &
+                                    self%loc(:, grid%items(jj)), rdx(1), rdx(2:3))
+                    if (rdx(1) < radius) then
+                        call pairs%push([grid%items(ii), grid%items(jj)], rdx)
+                    end if
+                end do
+
+                do jj = 1, found%len
+                    call distance2d(self%loc(:, grid%items(ii)), &
+                                    self%loc(:, found%items(jj)), rdx(1), rdx(2:3))
+                    if (rdx(1) < radius) then
+                        call pairs%push([grid%items(ii), found%items(jj)], rdx)
+                    end if
+                end do
+
+            end do
+
+        end subroutine find_nearby_particles
 
     end subroutine query
 

@@ -60,11 +60,11 @@ contains
     end subroutine build
 
     !> query
-    subroutine query(self, radius, pairs, rdxs)
+    pure subroutine query(self, radius, pairs, rdxs)
         class(nnps_grid1d), intent(inout), target :: self
         real(rk), intent(in) :: radius
-        integer, dimension(:), pointer :: pairs
-        real(rk), pointer, dimension(:) :: rdxs
+        integer, dimension(:), pointer, intent(out) :: pairs
+        real(rk), pointer, dimension(:), intent(out) :: rdxs
         integer :: i, j, k
         real(rk) :: rdx(2)
 
