@@ -62,6 +62,7 @@ contains
         class(int_vector), intent(inout) :: self
         type(int_vector), intent(in) :: that
 
+        if (that%len == 0) return
         do while (self%len + that%len > size(self%items))
             call self%extend()
         end do

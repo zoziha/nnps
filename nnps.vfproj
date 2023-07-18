@@ -52,6 +52,7 @@
 		<File RelativePath=".\src\grid\nnps_grid1d_module.f90"/>
 		<File RelativePath=".\src\grid\nnps_grid2d_module.f90"/>
 		<File RelativePath=".\src\grid\nnps_grid3d_module.f90"/>
+		<File RelativePath=".\src\utils\nnps_int_vector.f90"/>
 		<File RelativePath=".\src\utils\nnps_kinds.F90">
 			<FileConfiguration Name="Release|x64">
 				<Tool Name="VFFortranCompilerTool" Preprocess="preprocessYes"/></FileConfiguration>
