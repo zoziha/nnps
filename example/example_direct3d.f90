@@ -16,14 +16,14 @@ program example_direct3d
     call nnps%query(0.6_rk, pairs, rdxs)
 
     print *, '*** direct find (3D)'
-    call display(real(pairs), 'pairs index:')
+    call display(pairs, 'pairs index:')
     call display(loc(:, pairs), 'pairs coordinates:')
     call display(rdxs, 'rdxs:')
 
 end program example_direct3d
 !  *** direct find (3D)
 ! [vector: 2] pairs index:
-!  2.000E+00,  4.000E+00
+! 2, 4
 ! [matrix: 3*2] pairs coordinates:
 !  1.500E+00,  1.000E+00;
 !  1.000E+00,  1.000E+00;

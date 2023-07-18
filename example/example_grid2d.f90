@@ -15,14 +15,14 @@ program example_grid2d
     call nnps%query(0.6_rk, pairs, rdxs)
 
     print *, '*** grid find (2D)'
-    call display(real(pairs), 'pairs index:')
+    call display(pairs, 'pairs index:')
     call display(loc(:, pairs), 'pairs coordinates:')
     call display(rdxs, 'rdxs:')
 
 end program example_grid2d
 !  *** grid find (2D)
 ! [vector: 4] pairs index:
-!  1.000E+00,  4.000E+00,  4.000E+00,  3.000E+00
+!  1, 4, 4, 3
 ! [matrix: 2*4] pairs coordinates:
 !  0.000E+00,  5.000E-01,  5.000E-01,  1.000E+00;
 !  1.000E+00,  1.000E+00,  1.000E+00,  1.000E+00

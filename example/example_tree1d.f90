@@ -16,14 +16,14 @@ program example_tree1d
     call nnps%query(0.6_rk, pairs, rdxs)
 
     print *, '*** kd-tree find (1D)'
-    call display(real(pairs), 'pairs index:')
+    call display(pairs, 'pairs index:')
     call display(loc(pairs), 'pairs coordinates:')
     call display(rdxs, 'rdxs:')
 
 end program example_tree1d
 !  *** kd-tree find (1D)
 ! [vector: 4] pairs index:
-!  2.000E+00,  4.000E+00,  3.000E+00,  4.000E+00
+! 2, 4, 3, 4
 ! [vector: 4] pairs coordinates:
 !  1.000E+00,  1.500E+00,  2.000E+00,  1.500E+00
 ! [vector: 4] rdxs:
