@@ -12,7 +12,7 @@ NNPS scheme practice in CFD particle method.
 
 ## Usage
 
-Only [FPM]((https://github.com/fortran-lang/fpm)) and Meson is supported,
+Only [FPM]((https://github.com/fortran-lang/fpm))/Meson/Visual-Studio are supported,
 other build systems can copy source files directly,
 and `ifort/ifx` and `gfortran` compilers are tested.
 
@@ -22,6 +22,10 @@ To use `nnps` within your `fpm` project, add the following lines to your `fpm.to
 [dependencies]
 nnps = { git="https://github.com/zoziha/nnps" }
 ```
+
+### Parallel
+
+For 2D/3D NNPS, OpenMP is used for parallel acceleration, and parallel threads can be set through the `OMP_NUM_THREADS` environment variable.
 
 ## Example
 

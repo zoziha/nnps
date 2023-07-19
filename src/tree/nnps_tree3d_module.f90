@@ -6,6 +6,7 @@ module nnps_tree3d_module
     use nnps_math, only: distance3d
     use nnps_tree3d_octree, only: octree
     use nnps_tree3d_shape, only: sphere
+    use omp_lib, only: omp_get_thread_num, omp_get_max_threads
     implicit none
 
     private
@@ -14,6 +15,7 @@ module nnps_tree3d_module
     !> octave tree
     type nnps_octree
         real(rk), pointer :: loc(:, :)  !! particle 3d coordinate
+        type(vector), allocatable, private :: threads_pairs(:)  !! thread local pairs
         type(vector) :: pairs  !! partcile pairs
         type(octree) :: tree  !! data tree
     contains
@@ -31,7 +33,9 @@ contains
         integer, intent(in), optional :: cap
 
         self%loc => loc
+        allocate (self%threads_pairs(0:omp_get_max_threads() - 1))
         call self%pairs%init(3, cap)
+        call self%threads_pairs(:)%init(3, cap)
         call self%tree%init(min(1), max(1), max(2), min(2), max(3), min(3))
 
     end subroutine init
@@ -63,11 +67,15 @@ contains
 
         self%pairs%len = 0
 
-        !$omp parallel do private(i)
+        !$omp parallel do private(i) schedule(dynamic)
         do i = 1, size(self%loc, 2)
             associate (range => sphere(self%loc(:, i), radius))
-                call self%tree%query(self%loc, range, i, self%pairs)
+                call self%tree%query(self%loc, range, i, self%threads_pairs(omp_get_thread_num()))
             end associate
+        end do
+
+        do i = 0, omp_get_max_threads() - 1
+            call self%pairs%merge(self%threads_pairs(i))
         end do
 
         pairs => self%pairs%items(1:self%pairs%len*2)

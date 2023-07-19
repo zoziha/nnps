@@ -16,7 +16,7 @@ module nnps_vector
         real(rk), allocatable :: ritems(:)  !! 实型数组
     contains
         procedure :: init
-        procedure :: push
+        procedure :: push, merge
         procedure :: clear
         procedure, private :: extend
     end type vector
@@ -69,6 +69,23 @@ contains
         end associate
 
     end subroutine push
+
+    !> 向量合并
+    pure subroutine merge(self, that)
+        class(vector), intent(inout) :: self
+        class(vector), intent(in) :: that
+
+        if (that%len == 0) return
+        do while (self%len + that%len > self%cap)
+            call self%extend()
+        end do
+
+        self%items(self%len*2 + 1:(self%len + that%len)*2) = that%items(1:that%len*2)
+        self%ritems((self%dim + 1)*self%len + 1:(self%dim + 1)*(self%len + that%len)) = &
+            that%ritems(1:(self%dim + 1)*that%len)
+        self%len = self%len + that%len
+
+    end subroutine merge
 
     !> 向量清空
     pure subroutine clear(self)

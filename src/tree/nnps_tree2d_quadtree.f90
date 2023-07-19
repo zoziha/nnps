@@ -5,6 +5,7 @@ module nnps_tree2d_quadtree
     use nnps_tree2d_shape, only: circle, rectangle
     use nnps_vector, only: vector
     use nnps_int_vector, only: int_vector
+    use nnps_math, only: distance2d
     implicit none
 
     private
@@ -70,12 +71,12 @@ contains
     end subroutine divide
 
     !> query
-    recursive subroutine query(self, loc, range, i, pairs)
+    recursive pure subroutine query(self, loc, range, i, threads_pairs)
         class(quadtree), intent(in) :: self
         real(rk), intent(in) :: loc(:, :)
         type(circle), intent(in) :: range
         integer, intent(in) :: i
-        type(vector), intent(inout) :: pairs
+        type(vector), intent(inout) :: threads_pairs
         integer :: j
         real(rk) :: rdx(3)
 
@@ -83,17 +84,14 @@ contains
 
         if (self%points%len > 0) then
             if (self%points%items(1) > i) then
-                if (range%contain(loc(:, self%points%items(1)), rdx)) then
-                    !$omp critical
-                    call pairs%push([i, self%points%items(1)], rdx)
-                    !$omp end critical
-                end if
+                call distance2d(range%center, loc(:, self%points%items(1)), rdx(1), rdx(2:3))
+                if (rdx(1) < range%radius) call threads_pairs%push([i, self%points%items(1)], rdx)
             end if
         end if
 
         if (allocated(self%children)) then
             do j = 1, 4
-                call self%children(j)%query(loc, range, i, pairs)
+                call self%children(j)%query(loc, range, i, threads_pairs)
             end do
         end if
 
