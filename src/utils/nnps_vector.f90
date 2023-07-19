@@ -71,19 +71,29 @@ contains
     end subroutine push
 
     !> 向量合并
-    pure subroutine merge(self, that)
+    subroutine merge(self, that)
         class(vector), intent(inout) :: self
-        class(vector), intent(in) :: that
+        type(vector), intent(in) :: that(1:)
+        integer :: idx(size(that)), i
 
-        if (that%len == 0) return
-        do while (self%len + that%len > self%cap)
+        idx(1) = that(1)%len
+        do i = 2, size(that)
+            idx(i) = idx(i - 1) + that(i)%len
+        end do
+
+        do while (idx(size(that)) > self%cap)
             call self%extend()
         end do
 
-        self%items(self%len*2 + 1:(self%len + that%len)*2) = that%items(1:that%len*2)
-        self%ritems((self%dim + 1)*self%len + 1:(self%dim + 1)*(self%len + that%len)) = &
-            that%ritems(1:(self%dim + 1)*that%len)
-        self%len = self%len + that%len
+        !$omp parallel do private(i)
+        do i = 1, size(that)
+            if (that(i)%len == 0) cycle
+            self%items((idx(i) - that(i)%len)*2 + 1:idx(i)*2) = &
+                that(i)%items(1:that(i)%len*2)
+            self%ritems((idx(i) - that(i)%len)*(self%dim + 1) + 1:idx(i)*(self%dim + 1)) = &
+                that(i)%ritems(1:(self%dim + 1)*that(i)%len)
+        end do
+        self%len = idx(size(that))
 
     end subroutine merge
 

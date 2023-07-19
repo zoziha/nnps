@@ -64,7 +64,6 @@ contains
         real(rk), dimension(:), pointer :: rdxs
         integer :: i
 
-        self%pairs%len = 0
         self%threads_pairs%len = 0
 
         !$omp parallel do private(i) schedule(dynamic)
@@ -74,9 +73,7 @@ contains
             end associate
         end do
 
-        do i = 0, omp_get_max_threads() - 1
-            call self%pairs%merge(self%threads_pairs(i))
-        end do
+        call self%pairs%merge(self%threads_pairs)
 
         pairs => self%pairs%items(1:self%pairs%len*2)
         rdxs => self%pairs%ritems(1:self%pairs%len*3)

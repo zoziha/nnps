@@ -74,7 +74,6 @@ contains
         real(rk), dimension(:), pointer, intent(out) :: rdxs
         integer :: i, j, k, l, m
 
-        self%pairs%len = 0
         self%threads_pairs%len = 0
 
         ! 3D U style
@@ -106,9 +105,7 @@ contains
             end do
         end do
 
-        do i = 0, omp_get_max_threads() - 1
-            call self%pairs%merge(self%threads_pairs(i))
-        end do
+        call self%pairs%merge(self%threads_pairs)
 
         pairs => self%pairs%items(1:self%pairs%len*2)
         rdxs => self%pairs%ritems(1:self%pairs%len*4)
