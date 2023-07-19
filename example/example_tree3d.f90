@@ -18,8 +18,8 @@ program example_tree3d
 
     print *, '*** kd-tree find (3D)'
     call display(pairs, 'pairs index:', brief=.false.)
-    call display(loc(:, pairs), 'pairs coordinates:')
-    call display(rdxs, 'rdxs:')
+    call display(loc(:, pairs), 'pairs coordinates:', brief=.false.)
+    call display(rdxs, 'rdxs:', brief=.false.)
 
 end program example_tree3d
 !  *** kd-tree find (3D)

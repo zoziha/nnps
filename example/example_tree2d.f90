@@ -15,9 +15,9 @@ program example_tree2d
     call nnps%query(0.6_rk, pairs, rdxs)
 
     print *, '*** kd-tree find (2D)'
-    call display(pairs, 'pairs index:')
-    call display(loc(:, pairs), 'pairs coordinates:')
-    call display(rdxs, 'rdxs:')
+    call display(pairs, 'pairs index:', brief=.false.)
+    call display(loc(:, pairs), 'pairs coordinates:', brief=.false.)
+    call display(rdxs, 'rdxs:', brief=.false.)
 
 end program example_tree2d
 !  *** kd-tree find (2D)
