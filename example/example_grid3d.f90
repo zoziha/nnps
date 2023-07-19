@@ -17,9 +17,9 @@ program example_grid3d
     call nnps%query(0.6_rk, pairs, rdxs)
 
     print *, '*** grid find (3D)'
-    call display(pairs, 'pairs index:')
-    call display(loc(:, pairs), 'pairs coordinates:')
-    call display(rdxs, 'rdxs:')
+    call display(pairs, 'pairs index:', brief=.false.)
+    call display(loc(:, pairs), 'pairs coordinates:', brief=.false.)
+    call display(rdxs, 'rdxs:', brief=.false.)
 
 end program example_grid3d
 !  *** grid find (3D)

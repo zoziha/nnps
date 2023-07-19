@@ -57,16 +57,14 @@ contains
     subroutine query(self, radius, pairs, rdxs)
         class(nnps_binarytree), intent(inout), target :: self
         real(rk), intent(in) :: radius
-        integer, dimension(:), pointer :: pairs
-        real(rk), dimension(:), pointer :: rdxs
+        integer, dimension(:), pointer, intent(out) :: pairs
+        real(rk), dimension(:), pointer, intent(out) :: rdxs
         integer :: i
 
         self%pairs%len = 0
 
         do i = 1, size(self%loc)
-            associate (range => line(self%loc(i) - radius, self%loc(i) + radius))
-                call self%tree%query(self%loc, range, i, self%pairs)
-            end associate
+            call self%tree%query(self%loc, line(self%loc(i) - radius, self%loc(i) + radius), i, self%pairs)
         end do
 
         pairs => self%pairs%items(1:self%pairs%len*2)

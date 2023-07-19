@@ -14,9 +14,9 @@ program example_direct2d
     call nnps%query(0.6_rk, pairs, rdxs)
 
     print *, '*** direct find (2D)'
-    call display(pairs, 'pairs index:')
-    call display(loc(:, pairs), 'pairs coordinates:')
-    call display(rdxs, 'rdxs:')
+    call display(pairs, 'pairs index:', brief=.false.)
+    call display(loc(:, pairs), 'pairs coordinates:', brief=.false.)
+    call display(rdxs, 'rdxs:', brief=.false.)
 
 end program example_direct2d
 !  *** direct find (2D)

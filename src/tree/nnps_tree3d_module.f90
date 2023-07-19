@@ -61,17 +61,15 @@ contains
     subroutine query(self, radius, pairs, rdxs)
         class(nnps_octree), intent(inout), target :: self
         real(rk), intent(in) :: radius
-        integer, dimension(:), pointer :: pairs
-        real(rk), dimension(:), pointer :: rdxs
+        integer, dimension(:), pointer, intent(out) :: pairs
+        real(rk), dimension(:), pointer, intent(out) :: rdxs
         integer :: i
 
         self%threads_pairs%len = 0
 
         !$omp parallel do private(i) schedule(dynamic)
         do i = 1, size(self%loc, 2)
-            associate (range => sphere(self%loc(:, i), radius))
-                call self%tree%query(self%loc, range, i, self%threads_pairs(omp_get_thread_num()))
-            end associate
+            call self%tree%query(self%loc, sphere(self%loc(:, i), radius), i, self%threads_pairs(omp_get_thread_num()))
         end do
 
         call self%pairs%merge(self%threads_pairs)
