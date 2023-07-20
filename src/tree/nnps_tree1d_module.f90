@@ -3,7 +3,6 @@ module nnps_tree1d_module
 
     use nnps_kinds, only: rk
     use nnps_vector, only: vector
-    use nnps_math, only: distance1d
     use nnps_tree1d_binarytree, only: binarytree
     use nnps_tree1d_shape, only: line
     implicit none

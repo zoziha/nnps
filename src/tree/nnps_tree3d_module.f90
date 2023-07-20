@@ -3,7 +3,6 @@ module nnps_tree3d_module
 
     use nnps_kinds, only: rk
     use nnps_vector, only: vector
-    use nnps_math, only: distance3d
     use nnps_tree3d_octree, only: octree
     use nnps_tree3d_shape, only: sphere
     use omp_lib, only: omp_get_thread_num, omp_get_max_threads

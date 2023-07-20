@@ -14,6 +14,9 @@ in order to reduce the amount of computation,the distances obtained from solving
 in the data structure of this warehouse in order to improve the efficiency as much as possible.
 The distances stored are the line distance and the axis component of the line distance.
 
+* `pairs`: [i, j];
+* `rdxs`: [r, dx(dim)], dx = xi - xj;
+
 For 2D/3D NNPS, OpenMP is used for parallel acceleration, and parallel threads can be set through the `OMP_NUM_THREADS` environment variable. The idea of OpenMP acceleration is that each thread maintains a list of particle pairs `threads_pairs`, and after the parallel search for particle pairs is completed, they are merged uniformly.
 
 @note
