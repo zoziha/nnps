@@ -53,15 +53,14 @@ contains
     !> build
     subroutine build(self)
         class(nnps_grid2d), intent(inout) :: self
-        integer :: i
+        integer :: i, ik(2)
 
         call self%check()
         self%grids%len = 0
 
-        do i = 1, size(self%loc, 2)
-            associate (ik => ceiling((self%loc(:, i) - self%min)/self%radius))
-                call self%grids(ik(1), ik(2))%push(i)
-            end associate
+        do i = 1, size(self%loc, 2)  ! ifort bug: cannot use `associate` in do loops
+            ik = ceiling((self%loc(:, i) - self%min)/self%radius)
+            call self%grids(ik(1), ik(2))%push(i)
         end do
 
     end subroutine build
@@ -131,13 +130,13 @@ contains
     !> check
     subroutine check(self)
         class(nnps_grid2d), intent(inout) :: self
+        integer :: max(2), min(2)
 
-        associate (max => maxval(self%loc, 2), &
-                   min => maxval(self%loc, 2))
-            if (any(max > self%max) .or. any(min < self%min)) then
-                error stop 'nnps_grid2d: out of range'
-            end if
-        end associate
+        max = maxval(self%loc, 2)
+        min = maxval(self%loc, 2)
+        if (any(max > self%max) .or. any(min < self%min)) then
+            error stop 'nnps_grid2d: out of range'
+        end if
 
     end subroutine check
 
