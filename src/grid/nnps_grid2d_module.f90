@@ -130,7 +130,7 @@ contains
     !> check
     subroutine check(self)
         class(nnps_grid2d), intent(inout) :: self
-        integer :: max(2), min(2)
+        real(rk) :: max(2), min(2)
 
         max = maxval(self%loc, 2)
         min = maxval(self%loc, 2)
