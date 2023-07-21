@@ -20,7 +20,7 @@ module nnps_grid2d_module
         real(rk), dimension(2), private :: min, max
         real(rk), private :: radius
     contains
-        procedure :: init, build, query
+        procedure :: init, build, query, storage
         procedure, private :: check
     end type nnps_grid2d
 
@@ -139,5 +139,26 @@ contains
         end if
 
     end subroutine check
+
+    !> storage
+    integer function storage(self)
+        class(nnps_grid2d), intent(in) :: self
+        integer :: i, j
+
+        storage = storage_size(self) + storage_size(self%loc) + self%pairs%storage()
+
+        print *, 'storage_size = ', storage
+        do j = 1, size(self%grids, 2)
+            do i = 1, size(self%grids, 1)
+                storage = storage + self%grids(i, j)%storage()
+            end do
+        end do
+        print *, 'storage_size = ', storage
+        do i = 0, size(self%threads_pairs) - 1
+            storage = storage + self%threads_pairs(i)%storage()
+        end do
+        print *, 'storage_size = ', storage
+
+    end function storage
 
 end module nnps_grid2d_module

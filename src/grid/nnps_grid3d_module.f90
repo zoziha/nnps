@@ -20,7 +20,7 @@ module nnps_grid3d_module
         real(rk), dimension(3), private :: min, max
         real(rk), private :: radius
     contains
-        procedure :: init, build, query
+        procedure :: init, build, query, storage
         procedure, private :: check
     end type nnps_grid3d
 
@@ -150,5 +150,24 @@ contains
         end if
 
     end subroutine check
+
+    !> storage
+    pure integer function storage(self)
+        class(nnps_grid3d), intent(in) :: self
+        integer :: i, j, k
+
+        storage = storage_size(self) + storage_size(self%loc) + self%pairs%storage()
+        do k = 1, size(self%grids, 3)
+            do j = 1, size(self%grids, 2)
+                do i = 1, size(self%grids, 1)
+                    storage = storage + self%grids(i, j, k)%storage()
+                end do
+            end do
+        end do
+        do i = 1, size(self%threads_pairs)
+            storage = storage + self%threads_pairs(i)%storage()
+        end do
+
+    end function storage
 
 end module nnps_grid3d_module

@@ -12,7 +12,7 @@ module nnps_int_vector
         integer, allocatable :: items(:)  !! 整型数组
     contains
         procedure :: init
-        procedure :: push
+        procedure :: push, storage
         procedure :: clear
         procedure, private :: extend
     end type int_vector
@@ -56,6 +56,14 @@ contains
         self%items(self%len) = item
 
     end subroutine push
+
+    !> Storage
+    pure integer function storage(self)
+        class(int_vector), intent(in) :: self
+
+        storage = storage_size(self) + storage_size(self%items)*size(self%items)
+
+    end function storage
 
     !> 向量清空
     pure subroutine clear(self)
