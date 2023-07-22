@@ -4,6 +4,7 @@ module nnps_grid2d_module
     use nnps_kinds, only: rk
     use nnps_vector, only: vector
     use nnps_int_vector, only: int_vector
+    use nnps_compact_hashing, only: chash_tbl
     use nnps_math, only: distance2d, sqrt_eps
     use omp_lib, only: omp_get_thread_num, omp_get_max_threads
     implicit none
@@ -14,84 +15,88 @@ module nnps_grid2d_module
     !> 2d grid
     type nnps_grid2d
         real(rk), pointer :: loc(:, :)  !! particle 2d coordinate
-        type(int_vector), allocatable :: grids(:, :)  !! background grids
+        type(chash_tbl) :: tbl  !! background grids hash table
         type(vector), allocatable, private :: threads_pairs(:)  !! thread local pairs
         type(vector) :: pairs  !! particle pairs
         real(rk), dimension(2), private :: min, max
         real(rk), private :: radius
     contains
-        procedure :: init, build, query, storage
+        procedure :: init, query, storage
         procedure, private :: check
     end type nnps_grid2d
 
 contains
 
     !> initialize: U style
-    subroutine init(self, loc, min, max, radius, cap)
+    subroutine init(self, loc, min, max, radius, n)
         class(nnps_grid2d), intent(inout) :: self
         real(rk), dimension(:, :), intent(in), target :: loc
         real(rk), dimension(2), intent(in) :: min, max
         real(rk), intent(in) :: radius
-        integer, intent(in), optional :: cap
+        integer, intent(in) :: n
 
         self%loc => loc
         allocate (self%threads_pairs(0:omp_get_max_threads() - 1))
-        call self%pairs%init(2, cap)
-        call self%threads_pairs(:)%init(2, cap)
+        call self%pairs%init(2, 8*n)
+        call self%threads_pairs(:)%init(2, 2*n)
         self%min = min - sqrt_eps - radius  ! setup empty grids at the boundary
         self%max(1) = max(1) + radius  ! setup empty grids at the boundary
         self%max(2) = max(2)
         self%radius = radius
 
-        associate (ik => ceiling((self%max - self%min)/radius))
-            allocate (self%grids(ik(1), ik(2)))
-            call self%grids(:, :)%init(8)
-        end associate
+        call self%tbl%allocate(m=2*n)
 
     end subroutine init
 
-    !> build
-    subroutine build(self)
-        class(nnps_grid2d), intent(inout) :: self
-        integer :: i, ik(2)
-
-        call self%check()
-        self%grids%len = 0
-
-        do i = 1, size(self%loc, 2)  ! ifort bug: cannot use `associate` in do loops
-            ik = ceiling((self%loc(:, i) - self%min)/self%radius)
-            call self%grids(ik(1), ik(2))%push(i)
-        end do
-
-    end subroutine build
-
     !> query
-    subroutine query(self, radius, pairs, rdxs)
+    subroutine query(self, radius, pairs, rdxs, n)
         class(nnps_grid2d), intent(inout), target :: self
+        integer, intent(in) :: n
         real(rk), intent(in) :: radius
         integer, dimension(:), pointer, intent(out) :: pairs
         real(rk), pointer, dimension(:), intent(out) :: rdxs
-        integer :: i, j
+        integer :: i, j, idx(4), ik(2, n), idxij, max(2)
+
+        call self%check()
+        call self%tbl%zeroing()
+
+        !$omp parallel do private(i)
+        do i = 1, n
+            ik(:, i) = ceiling((self%loc(:, i) - self%min)/self%radius)
+        end do
+
+        do i = 1, n  ! cannot use parallel do here
+            call self%tbl%push(i=ik(1, i), j=ik(2, i), k=1, index=i)
+        end do
 
         self%threads_pairs%len = 0
+        max = maxval(ik, 2)
+        associate (grid => self%tbl%buckets)
 
-        ! U style
-        !$omp parallel do private(i, j) schedule(dynamic)
-        do j = 2, size(self%grids, 2)
-            do i = 2, size(self%grids, 1) - 1
+            ! U style
+            !$omp parallel do private(i, j, idx, idxij) schedule(dynamic)
+            do j = 2, max(2)
+                do i = 2, max(1) - 1
 
-                if (self%grids(i, j)%len == 0) cycle
+                    idxij = self%tbl%hash(i, j, 1)
+                    if (grid(idxij)%len == 0) cycle          !          ___________
+                    ! L style, 4 neighbors                   !          |         |
+                    idx = [self%tbl%hash(i - 1, j - 1, 1), & !  - - -   | |     | |
+                           self%tbl%hash(i, j - 1, 1), &     !  x o -   | |     | |
+                           self%tbl%hash(i + 1, j - 1, 1), & !  x x x   | |_____| |
+                           self%tbl%hash(i - 1, j, 1)]       !          |_________|
 
-                ! L style, 4 neighbors
-                call find_nearby_particles(self%grids(i, j), &                           !          ___________
-                    &[self%grids(i - 1, j - 1)%items(1:self%grids(i - 1, j - 1)%len), &  !  - - -   | |     | |
-                    &self%grids(i, j - 1)%items(1:self%grids(i, j - 1)%len), &           !  x o -   | |     | |
-                    &self%grids(i + 1, j - 1)%items(1:self%grids(i + 1, j - 1)%len), &   !  x x x   | |_____| |
-                    &self%grids(i - 1, j)%items(1:self%grids(i - 1, j)%len)], &          !          |_________|
-                    &self%threads_pairs(omp_get_thread_num()))
+                    call find_nearby_particles(grid(idxij), &
+                        &[grid(idx(1))%items(1:grid(idx(1))%len), &
+                        &grid(idx(2))%items(1:grid(idx(2))%len), &
+                        &grid(idx(3))%items(1:grid(idx(3))%len), &
+                        &grid(idx(4))%items(1:grid(idx(4))%len)], &
+                        &self%threads_pairs(omp_get_thread_num()))
 
+                end do
             end do
-        end do
+
+        end associate
 
         call self%pairs%merge(self%threads_pairs)
 
@@ -133,7 +138,7 @@ contains
         real(rk) :: max(2), min(2)
 
         max = maxval(self%loc, 2)
-        min = maxval(self%loc, 2)
+        min = minval(self%loc, 2)
         if (any(max > self%max) .or. any(min < self%min)) then
             error stop 'nnps_grid2d: out of range'
         end if
@@ -148,12 +153,12 @@ contains
         storage = storage_size(self) + storage_size(self%loc) + self%pairs%storage()
 
         print *, 'storage_size = ', storage
-        do j = 1, size(self%grids, 2)
-            do i = 1, size(self%grids, 1)
-                storage = storage + self%grids(i, j)%storage()
-            end do
-        end do
-        print *, 'storage_size = ', storage
+        ! do j = 1, size(self%grids, 2)
+        !     do i = 1, size(self%grids, 1)
+        !         storage = storage + self%grids(i, j)%storage()
+        !     end do
+        ! end do
+        ! print *, 'storage_size = ', storage
         do i = 0, size(self%threads_pairs) - 1
             storage = storage + self%threads_pairs(i)%storage()
         end do

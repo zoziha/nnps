@@ -45,7 +45,6 @@ contains
 
         associate (ik => ceiling((self%max - self%min)/radius))
             allocate (self%grids(ik(1), ik(2), ik(3)))
-            call self%grids(:, :, :)%init(8)
         end associate
 
     end subroutine init
@@ -144,7 +143,7 @@ contains
         real(rk) :: max(3), min(3)
 
         max = maxval(self%loc, 2)
-        min = maxval(self%loc, 2)
+        min = minval(self%loc, 2)
         if (any(max > self%max) .or. any(min < self%min)) then
             error stop 'nnps_grid3d: out of range'
         end if

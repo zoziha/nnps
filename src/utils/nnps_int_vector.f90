@@ -11,49 +11,29 @@ module nnps_int_vector
         integer :: len = 0  !! 有效向量长度
         integer, allocatable :: items(:)  !! 整型数组
     contains
-        procedure :: init
         procedure :: push, storage
         procedure :: clear
-        procedure, private :: extend
     end type int_vector
 
 contains
-
-    !> 初始化向量
-    !> @todo adjust default length
-    elemental subroutine init(self, len)
-        class(int_vector), intent(inout) :: self
-        integer, intent(in), optional :: len
-
-        self%len = 0
-        if (.not. allocated(self%items)) then
-            if (present(len)) then
-                allocate (self%items(len))
-            else
-                allocate (self%items(64))
-            end if
-        end if
-
-    end subroutine init
-
-    !> 向量扩容
-    pure subroutine extend(self)
-        class(int_vector), intent(inout) :: self
-        integer, allocatable :: tmp(:)
-
-        allocate (tmp(size(self%items)))
-        self%items = [self%items, tmp]
-
-    end subroutine extend
 
     !> 向量压入
     pure subroutine push(self, item)
         class(int_vector), intent(inout) :: self
         integer, intent(in) :: item
 
-        if (self%len == size(self%items)) call self%extend()
-        self%len = self%len + 1
-        self%items(self%len) = item
+        if (allocated(self%items)) then
+            if (self%len == size(self%items)) then
+                self%len = self%len + 1
+                self%items = [self%items, item]
+            else
+                self%len = self%len + 1
+                self%items(self%len) = item
+            end if
+        else
+            allocate(self%items(1), source=item)
+            self%len = 1
+        end if
 
     end subroutine push
 
@@ -66,12 +46,19 @@ contains
     end function storage
 
     !> 向量清空
-    pure subroutine clear(self)
+    elemental subroutine clear(self)
         class(int_vector), intent(inout) :: self
 
         deallocate (self%items)
-        self%len = 0
 
     end subroutine clear
+
+    !> Zeroing
+    elemental subroutine zeroing(self)
+        class(int_vector), intent(inout) :: self
+
+        self%len = 0
+
+    end subroutine zeroing
 
 end module nnps_int_vector

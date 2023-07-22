@@ -23,3 +23,6 @@ For 2D/3D NNPS, OpenMP is used for parallel acceleration, and parallel threads c
 The direct search method is relatively simple because it does not require the construction of data structures;
 the tree search method may take a larger total time because of the large amount of computation for single-particle searches;
 and the background grid method has a low time complexity and a relatively small amount of computation if the background grid is reused.
+
+In order to improve cache read and write, spatial hash with Z-sort or other graphs sort to get compact hash,
+this repository does not consider it for this time being.
