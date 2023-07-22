@@ -1,7 +1,7 @@
 !> Compact Hashing
 module nnps_compact_hashing
 
-    use nnps_int_vector, only: int_vector
+    use nnps_key_value, only: key_value
     implicit none
 
     private
@@ -9,19 +9,20 @@ module nnps_compact_hashing
 
     !> Compact Hashing
     type chash_tbl
-        type(int_vector), allocatable :: buckets(:)  !! Buckets
+        type(key_value), allocatable :: buckets(:)  !! Buckets
     contains
-        procedure :: allocate => chash_tbl_allocate, clear, zeroing, push, hash
+        procedure :: allocate => chash_tbl_allocate, clear, zeroing, set, hash
     end type chash_tbl
 
 contains
 
     !> Hashing function
-    pure integer function hash(self, i, j, k)
+    pure integer function hash(self, key)
         class(chash_tbl), intent(in) :: self
-        integer, intent(in) :: i, j, k
+        integer, intent(in) :: key(3)
 
-        hash = modulo(ieor(ieor(73856093*i, 19349663*j), 83492791*k), size(self%buckets))
+        hash = modulo(ieor(ieor(73856093*key(1), 19349663*key(2)), 83492791*key(3)), &
+                      size(self%buckets))
 
     end function hash
 
@@ -30,7 +31,7 @@ contains
         class(chash_tbl), intent(inout) :: self
         integer, intent(in) :: m
 
-        allocate(self%buckets(0:m-1))
+        allocate (self%buckets(0:m - 1))
 
     end subroutine chash_tbl_allocate
 
@@ -39,8 +40,7 @@ contains
         class(chash_tbl), intent(inout) :: self
 
         if (allocated(self%buckets)) then
-            call self%buckets(:)%clear()
-            deallocate(self%buckets)
+            deallocate (self%buckets)
         end if
 
     end subroutine clear
@@ -49,17 +49,18 @@ contains
     pure subroutine zeroing(self)
         class(chash_tbl), intent(inout) :: self
 
-        where (self%buckets(:)%len /= 0) self%buckets(:)%len = 0
+        call self%buckets(:)%zeroing()
 
     end subroutine zeroing
 
     !> Push
-    pure subroutine push(self, i, j, k, index)
+    pure subroutine set(self, key, value, stat)
         class(chash_tbl), intent(inout) :: self
-        integer, intent(in) :: i, j, k, index
+        integer, intent(in) :: key(3), value
+        logical, intent(out) :: stat
 
-        call self%buckets(self%hash(i, j, k))%push(index)
+        call self%buckets(self%hash(key))%push_back(key, value, stat)
 
-    end subroutine push
+    end subroutine set
 
 end module nnps_compact_hashing
