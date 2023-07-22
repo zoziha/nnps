@@ -16,23 +16,21 @@ module nnps_grid2d_module
     type nnps_grid2d
         real(rk), pointer :: loc(:, :)  !! particle 2d coordinate
         type(chash_tbl) :: tbl  !! background grids hash table
+        type(vector) :: pairs  !! particle pairs
+        real(rk), dimension(2), private :: min
+        type(int_vector), private :: iks  !! unique keys
         type(vector), allocatable, private :: threads_pairs(:)  !! thread local pairs
         type(int_vector), allocatable, private :: threads_idxs(:)  !! thread local indexes
-        type(vector) :: pairs  !! particle pairs
-        real(rk), dimension(2), private :: min, max
-        type(int_vector) :: iks  !! unique keys
-        real(rk), private :: radius
     contains
         procedure :: init, query, storage
     end type nnps_grid2d
 
 contains
 
-    !> initialize: U style
-    subroutine init(self, loc, radius, n)
+    !> initialize
+    subroutine init(self, loc, n)
         class(nnps_grid2d), intent(inout) :: self  !! nnps_grid2d
         real(rk), dimension(:, :), intent(in), target :: loc  !! particle 2d coordinate
-        real(rk), intent(in) :: radius  !! grid length, smoothing length
         integer, intent(in) :: n  !! number of particles
 
         self%loc => loc
@@ -40,7 +38,6 @@ contains
                   self%threads_idxs(0:omp_get_max_threads() - 1))
         call self%pairs%init(2, 8*n)
         call self%threads_pairs(:)%init(2, 2*n)
-        self%radius = radius
 
         call self%tbl%allocate(m=2*n)
 

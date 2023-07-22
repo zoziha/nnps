@@ -8,18 +8,18 @@ module nnps_int_vector
 
     !> int_vector integer vector
     type int_vector
-        integer :: len = 0  !! 有效向量长度
-        integer, allocatable :: items(:)  !! 整型数组
+        integer :: len = 0  !! true vector length
+        integer, allocatable :: items(:)  !! integer vector
     contains
-        procedure :: push, storage, push_back_items
+        procedure :: push_back, storage, push_back_items
         procedure :: clear
         procedure, private :: extend
     end type int_vector
 
 contains
 
-    !> 向量压入
-    pure subroutine push(self, item)
+    !> push back 1 item
+    pure subroutine push_back(self, item)
         class(int_vector), intent(inout) :: self
         integer, intent(in) :: item
 
@@ -32,7 +32,7 @@ contains
             self%len = 1
         end if
 
-    end subroutine push
+    end subroutine push_back
 
     !> push back n items
     pure subroutine push_back_items(self, items, n)

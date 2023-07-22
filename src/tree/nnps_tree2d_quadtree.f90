@@ -42,7 +42,7 @@ contains
         if (.not. self%boundary%contain(x)) return
 
         if (self%points%len < 1) then
-            call self%points%push(i)
+            call self%points%push_back(i)
             done = .true.
         else
             if (.not. allocated(self%children)) call self%divide()

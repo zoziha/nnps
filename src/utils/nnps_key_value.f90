@@ -25,7 +25,7 @@ contains
         if (allocated(self%key)) then
             do i = 1, size(self%value)
                 if (all(self%key(3*i - 2:3*i) == key)) then
-                    call self%value(i)%push(value)
+                    call self%value(i)%push_back(value)
                     if (self%value(i)%len == 1) then
                         stat = .true.
                     else
@@ -37,14 +37,14 @@ contains
             self%key = [self%key, key]
             block
                 type(int_vector) :: tmp
-                call tmp%push(value)
+                call tmp%push_back(value)
                 self%value = [self%value, tmp]
                 stat = .true.
             end block
         else
             allocate (self%key, source=key)
             allocate (self%value(1))
-            call self%value(1)%push(value)
+            call self%value(1)%push_back(value)
             stat = .true.
         end if
 

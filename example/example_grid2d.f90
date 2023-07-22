@@ -10,7 +10,7 @@ program example_grid2d
     integer, pointer :: pairs(:)
     real(rk), pointer :: rdxs(:)
 
-    call nnps%init(loc, 0.6_rk, n=4)
+    call nnps%init(loc, n=4)
     call nnps%query(0.6_rk, pairs, rdxs, n=4)
 
     print *, '*** grid find (2D)'

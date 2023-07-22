@@ -59,7 +59,7 @@ contains
 
         do i = 1, size(self%loc, 2)  ! ifort bug: cannot use `associate` in do loops
             ik = ceiling((self%loc(:, i) - self%min)/self%radius)
-            call self%grids(ik(1), ik(2), ik(3))%push(i)
+            call self%grids(ik(1), ik(2), ik(3))%push_back(i)
         end do
 
     end subroutine build

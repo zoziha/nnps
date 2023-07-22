@@ -52,7 +52,7 @@ contains
 
         do i = 1, size(self%loc)
             associate (ik => ceiling((self%loc(i) - self%min)/self%radius))
-                call self%grids(ik)%push(i)
+                call self%grids(ik)%push_back(i)
             end associate
         end do
 
