@@ -11,8 +11,9 @@ module nnps_int_vector
         integer :: len = 0  !! 有效向量长度
         integer, allocatable :: items(:)  !! 整型数组
     contains
-        procedure :: push, storage, push_back3
+        procedure :: push, storage, push_back_items
         procedure :: clear
+        procedure, private :: extend
     end type int_vector
 
 contains
@@ -23,39 +24,46 @@ contains
         integer, intent(in) :: item
 
         if (allocated(self%items)) then
-            if (self%len == size(self%items)) then
-                self%len = self%len + 1
-                self%items = [self%items, item]
-            else
-                self%len = self%len + 1
-                self%items(self%len) = item
-            end if
+            if (self%len == size(self%items)) call self%extend()
+            self%len = self%len + 1
+            self%items(self%len) = item
         else
-            allocate(self%items(1), source=item)
+            allocate (self%items(1), source=item)
             self%len = 1
         end if
 
     end subroutine push
 
-    !> push_back 3 items
-    pure subroutine push_back3(self, items)
+    !> push back n items
+    pure subroutine push_back_items(self, items, n)
         class(int_vector), intent(inout) :: self
-        integer, intent(in) :: items(3)
+        integer, intent(in) :: items(:)
+        integer, intent(in) :: n
+        integer :: m
 
         if (allocated(self%items)) then
-            if (self%len == size(self%items)) then
-                self%len = self%len + 3
-                self%items = [self%items, items]
-            else
-                self%len = self%len + 3
-                self%items(self%len-2:self%len) = items
-            end if
+            m = self%len + n
+            do while (m > size(self%items))
+                call self%extend()
+            end do
+            self%items(self%len + 1:m) = items
+            self%len = m
         else
-            allocate(self%items(3), source=items)
-            self%len = 3
+            allocate (self%items(n), source=items)
+            self%len = n
         end if
 
-    end subroutine push_back3
+    end subroutine push_back_items
+
+    !> extend
+    pure subroutine extend(self)
+        class(int_vector), intent(inout) :: self
+        integer, allocatable :: tmp(:)
+
+        allocate (tmp(size(self%items)))
+        self%items = [self%items, tmp]  ! address of self%items may not be changed, which is good
+
+    end subroutine extend
 
     !> Storage
     pure integer function storage(self)

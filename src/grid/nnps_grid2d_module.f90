@@ -17,6 +17,7 @@ module nnps_grid2d_module
         real(rk), pointer :: loc(:, :)  !! particle 2d coordinate
         type(chash_tbl) :: tbl  !! background grids hash table
         type(vector), allocatable, private :: threads_pairs(:)  !! thread local pairs
+        type(int_vector), allocatable, private :: threads_idxs(:)  !! thread local indexes
         type(vector) :: pairs  !! particle pairs
         real(rk), dimension(2), private :: min, max
         type(int_vector) :: iks  !! unique keys
@@ -35,7 +36,8 @@ contains
         integer, intent(in) :: n  !! number of particles
 
         self%loc => loc
-        allocate (self%threads_pairs(0:omp_get_max_threads() - 1))
+        allocate (self%threads_pairs(0:omp_get_max_threads() - 1), &
+                  self%threads_idxs(0:omp_get_max_threads() - 1))
         call self%pairs%init(2, 8*n)
         call self%threads_pairs(:)%init(2, 2*n)
         self%radius = radius
@@ -51,8 +53,7 @@ contains
         real(rk), intent(in) :: radius  !! grid length, smoothing length
         integer, dimension(:), pointer, intent(out) :: pairs  !! particle pairs
         real(rk), pointer, dimension(:), intent(out) :: rdxs  !! particle pairs distance
-        integer :: i, j, idx(5), ik(3), ijk(3, 5)
-        integer, allocatable :: idxs(:)
+        integer :: i, j, idx(5), ik(3), ijk(3, 5), thread_id
         integer, pointer :: values(:)
         logical :: lstat
 
@@ -64,14 +65,14 @@ contains
         do i = 1, n  ! cannot use parallel do here
             ik(1:2) = ceiling((self%loc(:, i) - self%min)/radius)
             call self%tbl%set(key=ik, value=i, stat=lstat)
-            if (lstat) call self%iks%push_back3(ik)  ! collect unique keys
+            if (lstat) call self%iks%push_back_items(ik, 3)  ! collect unique keys
         end do
 
         self%threads_pairs%len = 0
         associate (grid => self%tbl%buckets, iks => self%iks%items)
 
-            !$omp parallel do private(i, idx, idxs, ijk, values) schedule(dynamic)
-            do i = 1, self%iks%len, 3  ! @todo improve performance, not malloc and realloc frequently
+            !$omp parallel do private(i, idx, ijk, values, thread_id) schedule(dynamic)
+            do i = 1, self%iks%len, 3
 
                 ijk(:, 1) = [iks(i) - 1, iks(i + 1) - 1, iks(i + 2)]
                 ijk(:, 2) = [iks(i), iks(i + 1) - 1, iks(i + 2)]
@@ -86,19 +87,22 @@ contains
                        self%tbl%hash(ijk(:, 4)), &      !  x x x   | |_____| |
                        self%tbl%hash(ijk(:, 5))]        !          |_________|
 
-                allocate (idxs(0))
+                thread_id = omp_get_thread_num()
+                self%threads_idxs(thread_id)%len = 0
 
                 do j = 1, 4
                     nullify (values)
                     call grid(idx(j))%get_value(ijk(:, j), values)
-                    if (associated(values)) idxs = [idxs, values]
+                    if (associated(values)) then
+                        call self%threads_idxs(thread_id)%push_back_items(values, size(values))
+                    end if
                 end do
 
                 call grid(idx(5))%get_value(ijk(:, 5), values)
-                call find_nearby_particles(values, idxs, &
-                                           self%threads_pairs(omp_get_thread_num()))
+                call find_nearby_particles(values, &
+                    &self%threads_idxs(thread_id)%items(1:self%threads_idxs(thread_id)%len), &
+                    &self%threads_pairs(thread_id))
 
-                deallocate (idxs)
                 nullify (values)
 
             end do
