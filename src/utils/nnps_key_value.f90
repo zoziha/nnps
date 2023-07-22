@@ -60,22 +60,21 @@ contains
 
     end subroutine zeroing
 
-    !> get value
-    pure function get_value(self, key)
-        class(key_value), intent(in) :: self
+    !> get value @todo improve performance
+    subroutine get_value(self, key, ptr)
+        class(key_value), intent(in), target :: self
         integer, intent(in) :: key(3)
-        integer, allocatable :: get_value(:)
+        integer, pointer, intent(inout) :: ptr(:)
         integer :: i
 
-        allocate (get_value(0))
         if (.not. allocated(self%key)) return
         do i = 1, size(self%value)
             if (all(self%key(3*i - 2:3*i) == key)) then
-                get_value = [get_value, self%value(i)%items(1:self%value(i)%len)]
+                ptr => self%value(i)%items(1:self%value(i)%len)
                 return
             end if
         end do
 
-    end function get_value
+    end subroutine get_value
 
 end module nnps_key_value

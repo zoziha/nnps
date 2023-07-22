@@ -11,7 +11,7 @@ module nnps_int_vector
         integer :: len = 0  !! 有效向量长度
         integer, allocatable :: items(:)  !! 整型数组
     contains
-        procedure :: push, storage
+        procedure :: push, storage, push_back3
         procedure :: clear
     end type int_vector
 
@@ -36,6 +36,26 @@ contains
         end if
 
     end subroutine push
+
+    !> push_back 3 items
+    pure subroutine push_back3(self, items)
+        class(int_vector), intent(inout) :: self
+        integer, intent(in) :: items(3)
+
+        if (allocated(self%items)) then
+            if (self%len == size(self%items)) then
+                self%len = self%len + 3
+                self%items = [self%items, items]
+            else
+                self%len = self%len + 3
+                self%items(self%len-2:self%len) = items
+            end if
+        else
+            allocate(self%items(3), source=items)
+            self%len = 3
+        end if
+
+    end subroutine push_back3
 
     !> Storage
     pure integer function storage(self)

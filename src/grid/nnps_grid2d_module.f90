@@ -53,6 +53,7 @@ contains
         real(rk), pointer, dimension(:), intent(out) :: rdxs  !! particle pairs distance
         integer :: i, j, idx(5), ik(3), ijk(3, 5)
         integer, allocatable :: idxs(:)
+        integer, pointer :: values(:)
         logical :: lstat
 
         call self%tbl%zeroing()
@@ -63,18 +64,14 @@ contains
         do i = 1, n  ! cannot use parallel do here
             ik(1:2) = ceiling((self%loc(:, i) - self%min)/radius)
             call self%tbl%set(key=ik, value=i, stat=lstat)
-            if (lstat) then
-                call self%iks%push(ik(1))  ! collect unique keys
-                call self%iks%push(ik(2))
-                call self%iks%push(ik(3))
-            end if
+            if (lstat) call self%iks%push_back3(ik)  ! collect unique keys
         end do
 
         self%threads_pairs%len = 0
         associate (grid => self%tbl%buckets, iks => self%iks%items)
 
-            !$omp parallel do private(i, idx, idxs, ijk) schedule(dynamic)
-            do i = 1, self%iks%len, 3
+            !$omp parallel do private(i, idx, idxs, ijk, values) schedule(dynamic)
+            do i = 1, self%iks%len, 3  ! @todo improve performance, not malloc and realloc frequently
 
                 ijk(:, 1) = [iks(i) - 1, iks(i + 1) - 1, iks(i + 2)]
                 ijk(:, 2) = [iks(i), iks(i + 1) - 1, iks(i + 2)]
@@ -82,7 +79,7 @@ contains
                 ijk(:, 4) = [iks(i) - 1, iks(i + 1), iks(i + 2)]
                 ijk(:, 5) = [iks(i:i + 2)]
 
-                ! ! U style, L style, 4 neighbors       !          ___________
+                ! U style, L style, 4 neighbors         !          ___________
                 idx = [self%tbl%hash(ijk(:, 1)), &      !          |         |
                        self%tbl%hash(ijk(:, 2)), &      !  - - -   | |     | |
                        self%tbl%hash(ijk(:, 3)), &      !  x o -   | |     | |
@@ -92,12 +89,17 @@ contains
                 allocate (idxs(0))
 
                 do j = 1, 4
-                    idxs = [idxs, grid(idx(j))%get_value(ijk(:, j))]
+                    nullify (values)
+                    call grid(idx(j))%get_value(ijk(:, j), values)
+                    if (associated(values)) idxs = [idxs, values]
                 end do
-                call find_nearby_particles(grid(idx(5))%get_value(ijk(:, 5)), idxs, &
+
+                call grid(idx(5))%get_value(ijk(:, 5), values)
+                call find_nearby_particles(values, idxs, &
                                            self%threads_pairs(omp_get_thread_num()))
 
                 deallocate (idxs)
+                nullify (values)
 
             end do
 
