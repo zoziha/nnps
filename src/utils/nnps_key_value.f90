@@ -4,6 +4,9 @@ module nnps_key_value
     use nnps_int_vector, only: int_vector
     implicit none
 
+    private
+    public :: key_value
+
     !> key-value pair
     type key_value
         integer, allocatable :: key(:)  !! key

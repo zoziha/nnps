@@ -5,20 +5,20 @@ module nnps_spatial_hashing
     implicit none
 
     private
-    public :: chash_tbl
+    public :: shash_tbl
 
     !> spatial Hashing
-    type chash_tbl
+    type shash_tbl
         type(key_value), allocatable :: buckets(:)  !! Buckets
     contains
         procedure :: allocate => chash_tbl_allocate, clear, zeroing, set, hash
-    end type chash_tbl
+    end type shash_tbl
 
 contains
 
     !> Hashing function
     pure integer function hash(self, key)
-        class(chash_tbl), intent(in) :: self
+        class(shash_tbl), intent(in) :: self
         integer, intent(in) :: key(3)
 
         hash = modulo(ieor(ieor(73856093*key(1), 19349663*key(2)), 83492791*key(3)), &
@@ -28,7 +28,7 @@ contains
 
     !> Allocate
     pure subroutine chash_tbl_allocate(self, m)
-        class(chash_tbl), intent(inout) :: self
+        class(shash_tbl), intent(inout) :: self
         integer, intent(in) :: m
 
         allocate (self%buckets(0:m - 1))
@@ -37,7 +37,7 @@ contains
 
     !> Clean up
     pure subroutine clear(self)
-        class(chash_tbl), intent(inout) :: self
+        class(shash_tbl), intent(inout) :: self
 
         if (allocated(self%buckets)) then
             deallocate (self%buckets)
@@ -47,7 +47,7 @@ contains
 
     !> Zeroing
     pure subroutine zeroing(self)
-        class(chash_tbl), intent(inout) :: self
+        class(shash_tbl), intent(inout) :: self
 
         call self%buckets(:)%zeroing()
 
@@ -55,7 +55,7 @@ contains
 
     !> Push
     pure subroutine set(self, key, value, stat)
-        class(chash_tbl), intent(inout) :: self
+        class(shash_tbl), intent(inout) :: self
         integer, intent(in) :: key(3), value
         logical, intent(out) :: stat
 
