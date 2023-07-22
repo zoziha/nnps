@@ -1,5 +1,5 @@
-!> Compact Hashing
-module nnps_compact_hashing
+!> spatial Hashing
+module nnps_spatial_hashing
 
     use nnps_key_value, only: key_value
     implicit none
@@ -7,7 +7,7 @@ module nnps_compact_hashing
     private
     public :: chash_tbl
 
-    !> Compact Hashing
+    !> spatial Hashing
     type chash_tbl
         type(key_value), allocatable :: buckets(:)  !! Buckets
     contains
@@ -63,4 +63,4 @@ contains
 
     end subroutine set
 
-end module nnps_compact_hashing
+end module nnps_spatial_hashing

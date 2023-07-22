@@ -4,7 +4,7 @@ module nnps_grid2d_module
     use nnps_kinds, only: rk
     use nnps_vector, only: vector
     use nnps_int_vector, only: int_vector
-    use nnps_compact_hashing, only: chash_tbl
+    use nnps_spatial_hashing, only: chash_tbl
     use nnps_math, only: distance2d, sqrt_eps
     use omp_lib, only: omp_get_thread_num, omp_get_max_threads
     implicit none
