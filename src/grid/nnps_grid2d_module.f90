@@ -19,6 +19,7 @@ module nnps_grid2d_module
         type(vector), allocatable, private :: threads_pairs(:)  !! thread local pairs
         type(vector) :: pairs  !! particle pairs
         real(rk), dimension(2), private :: min, max
+        type(int_vector) :: iks  !! unique keys
         real(rk), private :: radius
     contains
         procedure :: init, query, storage
@@ -51,25 +52,29 @@ contains
         integer, dimension(:), pointer, intent(out) :: pairs  !! particle pairs
         real(rk), pointer, dimension(:), intent(out) :: rdxs  !! particle pairs distance
         integer :: i, j, idx(5), ik(3), ijk(3, 5)
-        integer, allocatable :: iks(:), idxs(:)
+        integer, allocatable :: idxs(:)
         logical :: lstat
 
         call self%tbl%zeroing()
         self%min = minval(self%loc, 2) - sqrt_eps
 
-        allocate (iks(0))
+        self%iks%len = 0
         ik(3) = 1
         do i = 1, n  ! cannot use parallel do here
             ik(1:2) = ceiling((self%loc(:, i) - self%min)/radius)
             call self%tbl%set(key=ik, value=i, stat=lstat)
-            if (lstat) iks = [iks, ik]  ! collect unique keys
+            if (lstat) then
+                call self%iks%push(ik(1))  ! collect unique keys
+                call self%iks%push(ik(2))
+                call self%iks%push(ik(3))
+            end if
         end do
 
         self%threads_pairs%len = 0
-        associate (grid => self%tbl%buckets)
+        associate (grid => self%tbl%buckets, iks => self%iks%items)
 
             !$omp parallel do private(i, idx, idxs, ijk) schedule(dynamic)
-            do i = 1, size(iks), 3
+            do i = 1, self%iks%len, 3
 
                 ijk(:, 1) = [iks(i) - 1, iks(i + 1) - 1, iks(i + 2)]
                 ijk(:, 2) = [iks(i), iks(i + 1) - 1, iks(i + 2)]
