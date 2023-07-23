@@ -37,7 +37,7 @@ contains
         allocate (self%threads_pairs(0:omp_get_max_threads() - 1), &
                   self%threads_idxs(0:omp_get_max_threads() - 1))
         call self%pairs%init(2, 8*n)
-        call self%threads_pairs(:)%init(2, 2*n)
+        call self%threads_pairs(:)%init(2, n)
 
         call self%tbl%allocate(m=2*n)
 
@@ -87,11 +87,12 @@ contains
                 thread_id = omp_get_thread_num()
                 self%threads_idxs(thread_id)%len = 0
 
+                nullify (values)
                 do j = 1, 4
-                    nullify (values)
                     call grid(idx(j))%get_value(ijk(:, j), values)
                     if (associated(values)) then
                         call self%threads_idxs(thread_id)%push_back_items(values, size(values))
+                        nullify (values)
                     end if
                 end do
 
@@ -140,7 +141,7 @@ contains
 
     end subroutine query
 
-    !> storage
+    !> storage @todo to complete
     integer function storage(self)
         class(nnps_grid2d), intent(in) :: self
         integer :: i, j
