@@ -26,7 +26,6 @@ contains
         class(binarytree), intent(inout) :: self
         real(rk), intent(in) :: left, right
 
-        call self%points%init(1)
         self%boundary = line(left, right)
 
     end subroutine init
@@ -42,7 +41,7 @@ contains
         if (.not. self%boundary%contain(x)) return
 
         if (self%points%len < 1) then
-            call self%points%push(i)
+            call self%points%push_back(i)
             done = .true.
         else
             if (.not. allocated(self%children)) call self%divide()

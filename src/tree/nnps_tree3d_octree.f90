@@ -27,7 +27,6 @@ contains
         class(octree), intent(inout) :: self
         real(rk), intent(in) :: left, right, top, bottom, front, back
 
-        call self%points%init(1)
         self%boundary = cuboid(left, right, top, bottom, front, back)
 
     end subroutine init
@@ -43,7 +42,7 @@ contains
         if (.not. self%boundary%contain(x)) return
 
         if (self%points%len < 1) then
-            call self%points%push(i)
+            call self%points%push_back(i)
             done = .true.
         else
             if (.not. allocated(self%children)) call self%divide()
