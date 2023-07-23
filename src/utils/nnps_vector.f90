@@ -1,19 +1,22 @@
-!> Vector 整型向量
+!> Vector data vector
 module nnps_vector
 
+    use nnps_kinds, only: rk
     implicit none
 
     private
     public :: vector
 
-    !> Vector 整型向量
+    !> Vector data vector
     type vector
         integer :: len = 0  !! 有效向量长度
+        integer, private :: cap = 0  !! 向量容量
+        integer, private :: dim  !! 物理场维度
         integer, allocatable :: items(:)  !! 整型数组
+        real(rk), allocatable :: ritems(:)  !! 实型数组
     contains
         procedure :: init
-        procedure :: push, pop
-        procedure :: get, set
+        procedure :: push, merge, storage
         procedure :: clear
         procedure, private :: extend
     end type vector
@@ -22,18 +25,20 @@ contains
 
     !> 初始化向量
     !> @todo adjust default length
-    elemental subroutine init(self, len)
+    elemental subroutine init(self, dim, cap)
         class(vector), intent(inout) :: self
-        integer, intent(in), optional :: len
+        integer, intent(in) :: dim
+        integer, intent(in), optional :: cap
+        integer, parameter :: default_len = 32
 
         self%len = 0
-        if (.not. allocated(self%items)) then
-            if (present(len)) then
-                allocate (self%items(len))
-            else
-                allocate (self%items(64))
-            end if
+        self%dim = dim
+        if (present(cap)) then
+            self%cap = cap
+        else
+            self%cap = default_len
         end if
+        if (.not. allocated(self%items)) allocate (self%items(2*self%cap), self%ritems((dim + 1)*self%cap))
 
     end subroutine init
 
@@ -41,61 +46,71 @@ contains
     pure subroutine extend(self)
         class(vector), intent(inout) :: self
         integer, allocatable :: tmp(:)
+        real(rk), allocatable :: rtmp(:)
 
-        allocate (tmp(size(self%items)))
+        self%cap = 2*self%cap
+        allocate (tmp(size(self%items)), rtmp(size(self%ritems)))
         self%items = [self%items, tmp]
+        self%ritems = [self%ritems, rtmp]
 
     end subroutine extend
 
     !> 向量压入
-    pure subroutine push(self, item)
+    pure subroutine push(self, items, ritems)
         class(vector), intent(inout) :: self
-        integer, intent(in) :: item
+        integer, intent(in) :: items(2)
+        real(rk), intent(in) :: ritems(:)
 
-        if (self%len == size(self%items)) call self%extend()
+        if (self%len == self%cap) call self%extend()
         self%len = self%len + 1
-        self%items(self%len) = item
+        associate (len2 => 2*self%len, dimlen => (self%dim + 1)*self%len)
+            self%items(len2 - 1:len2) = items
+            self%ritems(dimlen - self%dim:dimlen) = ritems
+        end associate
 
     end subroutine push
 
-    !> 向量弹出
-    pure subroutine pop(self, item)
+    !> 向量合并
+    subroutine merge(self, that)
         class(vector), intent(inout) :: self
-        integer, intent(out), optional :: item
+        type(vector), intent(in) :: that(1:)
+        integer :: idx(size(that)), i
 
-        if (self%len == 0) return
-        if (present(item)) item = self%items(self%len)
-        self%len = self%len - 1
+        idx(1) = that(1)%len
+        do i = 2, size(that)
+            idx(i) = idx(i - 1) + that(i)%len
+        end do
 
-    end subroutine pop
+        do while (idx(size(that)) > self%cap)
+            call self%extend()
+        end do
 
-    !> 向量获取
-    pure subroutine get(self, index, item)
+        !$omp parallel do private(i)
+        do i = 1, size(that)
+            if (that(i)%len == 0) cycle
+            self%items((idx(i) - that(i)%len)*2 + 1:idx(i)*2) = &
+                that(i)%items(1:that(i)%len*2)
+            self%ritems((idx(i) - that(i)%len)*(self%dim + 1) + 1:idx(i)*(self%dim + 1)) = &
+                that(i)%ritems(1:(self%dim + 1)*that(i)%len)
+        end do
+        self%len = idx(size(that))
+
+    end subroutine merge
+
+    !> Storage size
+    pure integer function storage(self)
         class(vector), intent(in) :: self
-        integer, intent(in) :: index
-        integer, intent(out) :: item
 
-        if (index < 1 .or. index > self%len) return
-        item = self%items(index)
+        storage = storage_size(self) + storage_size(self%items)*size(self%items) + &
+                  storage_size(self%ritems)*size(self%ritems)
 
-    end subroutine get
-
-    !> 向量设置
-    pure subroutine set(self, index, item)
-        class(vector), intent(inout) :: self
-        integer, intent(in) :: index
-        integer, intent(in) :: item
-
-        if (index < 1 .or. index > self%len) return
-        self%items(index) = item
-
-    end subroutine set
+    end function storage
 
     !> 向量清空
     pure subroutine clear(self)
         class(vector), intent(inout) :: self
 
-        deallocate (self%items)
+        deallocate (self%items, self%ritems)
         self%len = 0
 
     end subroutine clear

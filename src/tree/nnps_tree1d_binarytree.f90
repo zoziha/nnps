@@ -4,6 +4,7 @@ module nnps_tree1d_binarytree
     use nnps_kinds, only: rk
     use nnps_tree1d_shape, only: line
     use nnps_vector, only: vector
+    use nnps_int_vector, only: int_vector
     implicit none
 
     private
@@ -13,7 +14,7 @@ module nnps_tree1d_binarytree
     type binarytree
         type(line) :: boundary  !! boundary
         type(binarytree), allocatable :: children(:)  !! leef
-        type(vector) :: points  !! points
+        type(int_vector) :: points  !! points
     contains
         procedure :: init, add, divide, query, clear
     end type binarytree
@@ -25,7 +26,6 @@ contains
         class(binarytree), intent(inout) :: self
         real(rk), intent(in) :: left, right
 
-        call self%points%init(1)
         self%boundary = line(left, right)
 
     end subroutine init
@@ -41,7 +41,7 @@ contains
         if (.not. self%boundary%contain(x)) return
 
         if (self%points%len < 1) then
-            call self%points%push(i)
+            call self%points%push_back(i)
             done = .true.
         else
             if (.not. allocated(self%children)) call self%divide()
@@ -73,14 +73,14 @@ contains
         integer, intent(in) :: i
         type(vector), intent(inout) :: pairs
         integer :: j
+        real(rk) :: rdx(2)
 
         if (.not. range%intersect(self%boundary)) return
 
         if (self%points%len > 0) then
-            if (range%contain(loc(self%points%items(1)))) then
-                if (self%points%items(1) > i) then
-                    call pairs%push(i)
-                    call pairs%push(self%points%items(1))
+            if (self%points%items(1) > i) then
+                if (range%contain(loc(self%points%items(1)), rdx)) then
+                    call pairs%push([i, self%points%items(1)], rdx)
                 end if
             end if
         end if

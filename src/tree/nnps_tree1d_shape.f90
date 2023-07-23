@@ -2,6 +2,7 @@
 module nnps_tree1d_shape
 
     use nnps_kinds, only: rk
+    use nnps_math, only: distance1d
     implicit none
 
     private
@@ -17,10 +18,12 @@ module nnps_tree1d_shape
 contains
 
     !> judgy contain
-    pure logical function contain(self, x)
+    logical function contain(self, x, rdx)
         class(line), intent(in) :: self
         real(rk), intent(in) :: x
+        real(rk), intent(out), optional :: rdx(2)
 
+        if (present(rdx)) call distance1d((self%left + self%right)/2, x, rdx(1), rdx(2))
         contain = x >= self%left .and. x <= self%right
 
     end function contain

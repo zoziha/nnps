@@ -2,7 +2,6 @@
 module nnps_tree3d_shape
 
     use nnps_kinds, only: rk
-    use nnps_math, only: distance3d
     implicit none
 
     private
@@ -19,7 +18,7 @@ module nnps_tree3d_shape
     type sphere
         real(rk) :: center(3), radius  !! center and radius
     contains
-        procedure :: contain => sphere_contain, intersect => sphere_intersect
+        procedure :: intersect => sphere_intersect
     end type sphere
 
 contains
@@ -34,17 +33,6 @@ contains
                          x(3) >= self%back .and. x(3) <= self%front
 
     end function cuboid_contain
-
-    !> judgy contain
-    pure logical function sphere_contain(self, x)
-        class(sphere), intent(in) :: self
-        real(rk), intent(in) :: x(3)
-        real(rk) :: r
-
-        call distance3d(self%center, x, r)
-        sphere_contain = r < self%radius
-
-    end function sphere_contain
 
     !> judgy intersect
     pure logical function sphere_intersect(self, that)

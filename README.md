@@ -12,7 +12,7 @@ NNPS scheme practice in CFD particle method.
 
 ## Usage
 
-Only [FPM]((https://github.com/fortran-lang/fpm)) and Meson is supported,
+Only [FPM]((https://github.com/fortran-lang/fpm))/Meson/Visual-Studio are supported,
 other build systems can copy source files directly,
 and `ifort/ifx` and `gfortran` compilers are tested.
 
@@ -22,6 +22,10 @@ To use `nnps` within your `fpm` project, add the following lines to your `fpm.to
 [dependencies]
 nnps = { git="https://github.com/zoziha/nnps" }
 ```
+
+### Parallel
+
+For 2D/3D NNPS, OpenMP is used for parallel acceleration, and parallel threads can be set through the `OMP_NUM_THREADS` environment variable.
 
 ## Example
 
@@ -40,19 +44,25 @@ program example_direct2d
     real(rk), dimension(2, 4) :: loc = reshape([0.0_rk, 1.0_rk, 2.0_rk, 1.5_rk, &
                                                 1.0_rk, 1.0_rk, 0.5_rk, 1.0_rk], [2, 4])
     integer, pointer :: pairs(:)
+    real(rk), pointer :: rdxs(:)
 
     call nnps%init(loc)
-    call nnps%query(0.6_rk, pairs)
+    call nnps%query(0.6_rk, pairs, rdxs)
 
-    call display(real(pairs), 'pairs index:')
+    print *, '*** direct find (2D)'
+    call display(pairs, 'pairs index:')
     call display(loc(:, pairs), 'pairs coordinates:')
+    call display(rdxs, 'rdxs:')
 
 end program example_direct2d
-!> [vector: 4] pairs index:
-!>  1.000E+00,  4.000E+00,  3.000E+00,  4.000E+00
-!> [matrix: 2*4] pairs coordinates:
-!>  0.000E+00,  5.000E-01,  1.000E+00,  5.000E-01;
-!>  1.000E+00,  1.000E+00,  1.000E+00,  1.000E+00
+!  *** direct find (2D)
+! [vector: 4] pairs index:
+! 1, 3, 3, 4
+! [matrix: 2*4] pairs coordinates:
+!  0.000E+00,  5.000E-01,  1.000E+00,  5.000E-01;
+!  1.000E+00,  1.000E+00,  1.000E+00,  1.000E+00
+! [vector: 6] rdxs:
+!  5.000E-01, -5.000E-01,  0.000E+00, ...  0.000E+00
 ```
 
 Originally a study of the NNPS algorithm for SPH particle methods, this library has now been introduced into the SPH code, see [zoziha/SPH](https://github.com/zoziha/SPH).

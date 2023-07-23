@@ -1,11 +1,11 @@
-!> octave tree search
+!> 3D octave tree search
 module nnps_tree3d_module
 
     use nnps_kinds, only: rk
     use nnps_vector, only: vector
-    use nnps_math, only: distance3d
     use nnps_tree3d_octree, only: octree
     use nnps_tree3d_shape, only: sphere
+    use omp_lib, only: omp_get_thread_num, omp_get_max_threads
     implicit none
 
     private
@@ -14,6 +14,7 @@ module nnps_tree3d_module
     !> octave tree
     type nnps_octree
         real(rk), pointer :: loc(:, :)  !! particle 3d coordinate
+        type(vector), allocatable, private :: threads_pairs(:)  !! thread local pairs
         type(vector) :: pairs  !! partcile pairs
         type(octree) :: tree  !! data tree
     contains
@@ -24,14 +25,16 @@ module nnps_tree3d_module
 contains
 
     !> initialize
-    subroutine init(self, loc, min, max, len)
+    subroutine init(self, loc, min, max, cap)
         class(nnps_octree), intent(inout) :: self
         real(rk), dimension(:, :), intent(in), target :: loc
         real(rk), intent(in), dimension(3) :: min, max
-        integer, intent(in), optional :: len
+        integer, intent(in), optional :: cap
 
         self%loc => loc
-        call self%pairs%init(len)
+        allocate (self%threads_pairs(0:omp_get_max_threads() - 1))
+        call self%pairs%init(3, cap)
+        call self%threads_pairs(:)%init(3, cap)
         call self%tree%init(min(1), max(1), max(2), min(2), max(3), min(3))
 
     end subroutine init
@@ -54,21 +57,24 @@ contains
     end subroutine build
 
     !> query
-    subroutine query(self, radius, pairs)
+    subroutine query(self, radius, pairs, rdxs)
         class(nnps_octree), intent(inout), target :: self
         real(rk), intent(in) :: radius
-        integer, dimension(:), pointer :: pairs
+        integer, dimension(:), pointer, intent(out) :: pairs
+        real(rk), dimension(:), pointer, intent(out) :: rdxs
         integer :: i
 
-        self%pairs%len = 0
+        self%threads_pairs%len = 0
 
+        !$omp parallel do private(i) schedule(dynamic)
         do i = 1, size(self%loc, 2)
-            associate (range => sphere(self%loc(:, i), radius))
-                call self%tree%query(self%loc, range, i, self%pairs)
-            end associate
+            call self%tree%query(self%loc, sphere(self%loc(:, i), radius), i, self%threads_pairs(omp_get_thread_num()))
         end do
 
-        pairs => self%pairs%items(1:self%pairs%len)
+        call self%pairs%merge(self%threads_pairs)
+
+        pairs => self%pairs%items(1:self%pairs%len*2)
+        rdxs => self%pairs%ritems(1:self%pairs%len*4)
 
     end subroutine query
 

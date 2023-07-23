@@ -1,9 +1,12 @@
-!> background grid method
+!> 2D background grid method
 module nnps_grid2d_module
 
     use nnps_kinds, only: rk
     use nnps_vector, only: vector
+    use nnps_int_vector, only: int_vector
+    use nnps_spatial_hashing, only: shash_tbl
     use nnps_math, only: distance2d, sqrt_eps
+    use omp_lib, only: omp_get_thread_num, omp_get_max_threads
     implicit none
 
     private
@@ -12,122 +15,151 @@ module nnps_grid2d_module
     !> 2d grid
     type nnps_grid2d
         real(rk), pointer :: loc(:, :)  !! particle 2d coordinate
-        type(vector), allocatable :: grids(:, :)  !! background grids
+        type(shash_tbl) :: tbl  !! background grids hash table
         type(vector) :: pairs  !! particle pairs
-        real(rk), dimension(2), private :: min, max
-        real(rk), private :: radius
+        real(rk), dimension(2), private :: min
+        type(int_vector), private :: iks  !! unique keys
+        type(vector), allocatable, private :: threads_pairs(:)  !! thread local pairs
+        type(int_vector), allocatable, private :: threads_idxs(:)  !! thread local indexes
     contains
-        procedure :: init, build, query
-        procedure, private :: check
+        procedure :: init, query, storage
     end type nnps_grid2d
 
 contains
 
     !> initialize
-    subroutine init(self, loc, min, max, radius, len)
-        class(nnps_grid2d), intent(inout) :: self
-        real(rk), dimension(:, :), intent(in), target :: loc
-        real(rk), dimension(2), intent(in) :: min, max
-        real(rk), intent(in) :: radius
-        integer, intent(in), optional :: len
+    subroutine init(self, loc, n)
+        class(nnps_grid2d), intent(inout) :: self  !! nnps_grid2d
+        real(rk), dimension(:, :), intent(in), target :: loc  !! particle 2d coordinate
+        integer, intent(in) :: n  !! number of particles
 
         self%loc => loc
-        call self%pairs%init(len)
-        self%min(1) = min(1) - radius - sqrt_eps    ! setup empty grids at the boundary
-        self%min(2) = min(2) - sqrt_eps
-        self%max = max + radius                     ! setup empty grids at the boundary
-        self%radius = radius
+        allocate (self%threads_pairs(0:omp_get_max_threads() - 1), &
+                  self%threads_idxs(0:omp_get_max_threads() - 1))
+        call self%pairs%init(2, 8*n)
+        call self%threads_pairs(:)%init(2, n)
 
-        associate (ik => ceiling((self%max - self%min)/radius))
-            allocate (self%grids(ik(1), ik(2)))
-            call self%grids(:, :)%init(8)
-        end associate
+        call self%tbl%allocate(m=2*n)
 
     end subroutine init
 
-    !> build
-    subroutine build(self)
-        class(nnps_grid2d), intent(inout) :: self
-        integer :: i
+    !> query
+    subroutine query(self, radius, pairs, rdxs, n)
+        class(nnps_grid2d), intent(inout), target :: self  !! nnps_grid2d
+        integer, intent(in) :: n  !! number of particles
+        real(rk), intent(in) :: radius  !! grid length, smoothing length
+        integer, dimension(:), pointer, intent(out) :: pairs  !! particle pairs
+        real(rk), pointer, dimension(:), intent(out) :: rdxs  !! particle pairs distance
+        integer :: i, j, idx(5), ik(3), ijk(3, 5), thread_id
+        integer, pointer :: values(:)
+        logical :: lstat
 
-        call self%check()
-        self%grids%len = 0
+        call self%tbl%zeroing()
+        self%min = minval(self%loc, 2) - sqrt_eps
 
-        do i = 1, size(self%loc, 2)
-            associate (ik => ceiling((self%loc(:, i) - self%min)/self%radius))
-                call self%grids(ik(1), ik(2))%push(i)
-            end associate
+        self%iks%len = 0
+        ik(3) = 1
+        do i = 1, n  ! cannot use parallel do here
+            ik(1:2) = ceiling((self%loc(:, i) - self%min)/radius)
+            call self%tbl%set(key=ik, value=i, stat=lstat)
+            if (lstat) call self%iks%push_back_items(ik, 3)  ! collect unique keys
         end do
 
-    end subroutine build
+        self%threads_pairs%len = 0
+        associate (grid => self%tbl%buckets, iks => self%iks%items)
 
-    !> query
-    subroutine query(self, radius, pairs)
-        class(nnps_grid2d), intent(inout), target :: self
-        real(rk), intent(in) :: radius
-        integer, dimension(:), pointer :: pairs
-        integer :: i, j, k, l
+            !$omp parallel do private(i, idx, ijk, values, thread_id) schedule(dynamic)
+            do i = 1, self%iks%len, 3
 
-        self%pairs%len = 0
+                ijk(:, 1) = [iks(i) - 1, iks(i + 1) - 1, iks(i + 2)]
+                ijk(:, 2) = [iks(i), iks(i + 1) - 1, iks(i + 2)]
+                ijk(:, 3) = [iks(i) + 1, iks(i + 1) - 1, iks(i + 2)]
+                ijk(:, 4) = [iks(i) - 1, iks(i + 1), iks(i + 2)]
+                ijk(:, 5) = [iks(i:i + 2)]
 
-        do j = 1, size(self%grids, 2) - 1
-            do i = 2, size(self%grids, 1) - 1
+                ! U style, L style, 4 neighbors         !          ___________
+                idx = [self%tbl%hash(ijk(:, 1)), &      !          |         |
+                       self%tbl%hash(ijk(:, 2)), &      !  - - -   | |     | |
+                       self%tbl%hash(ijk(:, 3)), &      !  x o -   | |     | |
+                       self%tbl%hash(ijk(:, 4)), &      !  x x x   | |_____| |
+                       self%tbl%hash(ijk(:, 5))]        !          |_________|
 
-                if (self%grids(i, j)%len == 0) cycle
-                do k = 1, self%grids(i, j)%len
+                thread_id = omp_get_thread_num()
+                self%threads_idxs(thread_id)%len = 0
 
-                    do l = k + 1, self%grids(i, j)%len
-                        call pairing(i, j, i, j, k, l, self%pairs)
-                    end do
-                    do l = 1, self%grids(i - 1, j + 1)%len
-                        call pairing(i, j, i - 1, j + 1, k, l, self%pairs)
-                    end do
-                    do l = 1, self%grids(i, j + 1)%len
-                        call pairing(i, j, i, j + 1, k, l, self%pairs)
-                    end do
-                    do l = 1, self%grids(i + 1, j + 1)%len
-                        call pairing(i, j, i + 1, j + 1, k, l, self%pairs)
-                    end do
-                    do l = 1, self%grids(i + 1, j)%len
-                        call pairing(i, j, i + 1, j, k, l, self%pairs)
-                    end do
-
+                nullify (values)
+                do j = 1, 4
+                    call grid(idx(j))%get_value(ijk(:, j), values)
+                    if (associated(values)) then
+                        call self%threads_idxs(thread_id)%push_back_items(values, size(values))
+                        nullify (values)
+                    end if
                 end do
 
-            end do
-        end do
+                call grid(idx(5))%get_value(ijk(:, 5), values)
+                call find_nearby_particles(values, &
+                    &self%threads_idxs(thread_id)%items(1:self%threads_idxs(thread_id)%len), &
+                    &self%threads_pairs(thread_id))
 
-        pairs => self%pairs%items(1:self%pairs%len)
+                nullify (values)
+
+            end do
+
+        end associate
+
+        call self%pairs%merge(self%threads_pairs)
+
+        pairs => self%pairs%items(1:self%pairs%len*2)
+        rdxs => self%pairs%ritems(1:self%pairs%len*3)
 
     contains
 
-        subroutine pairing(i, j, ik, jk, k, l, pairs)
-            integer, intent(in) :: i, j, ik, jk, k, l
-            type(vector), intent(inout) :: pairs
-            real(rk) :: r
+        pure subroutine find_nearby_particles(main, found, threads_pairs)
+            integer, intent(in) :: main(:)
+            integer, intent(in) :: found(:)
+            type(vector), intent(inout) :: threads_pairs
+            integer :: ii, jj
+            real(rk) :: rdx(3)
 
-            call distance2d(self%loc(:, self%grids(i, j)%items(k)), &
-                            self%loc(:, self%grids(ik, jk)%items(l)), r)
-            if (r < radius) then
-                call pairs%push(self%grids(i, j)%items(k))
-                call pairs%push(self%grids(ik, jk)%items(l))
-            end if
+            do ii = 1, size(main)
 
-        end subroutine pairing
+                do jj = ii + 1, size(main)
+                    call distance2d(self%loc(:, main(ii)), &
+                                    self%loc(:, main(jj)), rdx(1), rdx(2:3))
+                    if (rdx(1) < radius) call threads_pairs%push([main(ii), main(jj)], rdx)
+                end do
+
+                do jj = 1, size(found)
+                    call distance2d(self%loc(:, main(ii)), &
+                                    self%loc(:, found(jj)), rdx(1), rdx(2:3))
+                    if (rdx(1) < radius) call threads_pairs%push([main(ii), found(jj)], rdx)
+                end do
+
+            end do
+
+        end subroutine find_nearby_particles
 
     end subroutine query
 
-    !> check
-    subroutine check(self)
-        class(nnps_grid2d), intent(inout) :: self
+    !> storage @todo to complete
+    integer function storage(self)
+        class(nnps_grid2d), intent(in) :: self
+        integer :: i, j
 
-        associate (max => maxval(self%loc, 2), &
-                   min => maxval(self%loc, 2))
-            if (any(max > self%max) .or. any(min < self%min)) then
-                error stop 'nnps_grid2d: out of range'
-            end if
-        end associate
+        storage = storage_size(self) + storage_size(self%loc) + self%pairs%storage()
 
-    end subroutine check
+        print *, 'storage_size = ', storage
+        ! do j = 1, size(self%grids, 2)
+        !     do i = 1, size(self%grids, 1)
+        !         storage = storage + self%grids(i, j)%storage()
+        !     end do
+        ! end do
+        ! print *, 'storage_size = ', storage
+        do i = 0, size(self%threads_pairs) - 1
+            storage = storage + self%threads_pairs(i)%storage()
+        end do
+        print *, 'storage_size = ', storage
+
+    end function storage
 
 end module nnps_grid2d_module

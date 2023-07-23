@@ -1,5 +1,5 @@
 name = "nnps"
-version = "1.0.0"
+version = "1.1.0"
 license = "MIT"
 author = "ZUO Zhihua"
 maintainer = "zuo.zhihua@qq.com"
@@ -8,10 +8,12 @@ copyright = "Copyright 2021~2023 ZUO Zhihua"
 [build]
 auto-examples = true
 
+[dependencies]
+openmp = "*"
+
 [dev-dependencies]
 test-drive = { git = "https://github.com/fortran-lang/test-drive", tag = "v0.4.0" }
 display = { git = "https://gitee.com/zoziha/display" }
-openmp = "*"
 
 [install]
 library = true

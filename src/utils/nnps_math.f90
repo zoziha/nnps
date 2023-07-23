@@ -12,33 +12,32 @@ module nnps_math
 contains
 
     !> 1d distance
-    pure subroutine distance1d(x, y, r)
+    pure subroutine distance1d(x, y, r, dx)
         real(rk), intent(in) :: x, y
-        real(rk), intent(out) :: r
+        real(rk), intent(out) :: r, dx
 
-        r = abs(x - y)
+        dx = x - y
+        r = abs(dx)
 
     end subroutine distance1d
 
     !> 2d distance
-    pure subroutine distance2d(x, y, r)
+    pure subroutine distance2d(x, y, r, dx)
         real(rk), intent(in), dimension(2) :: x, y
-        real(rk), intent(out) :: r
+        real(rk), intent(out) :: r, dx(2)
 
-        associate (d => x - y)
-            r = sqrt(d(1)*d(1) + d(2)*d(2))
-        end associate
+        dx = x - y
+        r = sqrt(dx(1)*dx(1) + dx(2)*dx(2))
 
     end subroutine distance2d
 
     !> 3d distance
-    pure subroutine distance3d(x, y, r)
+    pure subroutine distance3d(x, y, r, dx)
         real(rk), intent(in), dimension(3) :: x, y
-        real(rk), intent(out) :: r
+        real(rk), intent(out) :: r, dx(3)
 
-        associate (d => x - y)
-            r = sqrt(d(1)*d(1) + d(2)*d(2) + d(3)*d(3))
-        end associate
+        dx = x - y
+        r = sqrt(dx(1)*dx(1) + dx(2)*dx(2) + dx(3)*dx(3))
 
     end subroutine distance3d
 

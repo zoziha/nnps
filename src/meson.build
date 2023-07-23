@@ -15,9 +15,12 @@ filenames = [
     'tree/nnps_tree3d_module.f90',
     'tree/nnps_tree3d_shape.f90',
     'tree/nnps_tree3d_octree.f90',
+    'utils/nnps_spatial_hashing.F90',
+    'utils/nnps_key_value.F90',
     'utils/nnps_kinds.F90',
     'utils/nnps_math.f90',
     'utils/nnps_vector.f90',
+    'utils/nnps_int_vector.f90',
 ]
 
 nnps_lib = library(

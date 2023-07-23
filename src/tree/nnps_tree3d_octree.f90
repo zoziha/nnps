@@ -4,6 +4,8 @@ module nnps_tree3d_octree
     use nnps_kinds, only: rk
     use nnps_tree3d_shape, only: sphere, cuboid
     use nnps_vector, only: vector
+    use nnps_int_vector, only: int_vector
+    use nnps_math, only: distance3d
     implicit none
 
     private
@@ -13,7 +15,7 @@ module nnps_tree3d_octree
     type octree
         type(cuboid) :: boundary  !! boundary
         type(octree), allocatable :: children(:)  !! leef
-        type(vector) :: points  !! points
+        type(int_vector) :: points  !! points
     contains
         procedure :: init, add, divide, query, clear
     end type octree
@@ -25,7 +27,6 @@ contains
         class(octree), intent(inout) :: self
         real(rk), intent(in) :: left, right, top, bottom, front, back
 
-        call self%points%init(1)
         self%boundary = cuboid(left, right, top, bottom, front, back)
 
     end subroutine init
@@ -41,7 +42,7 @@ contains
         if (.not. self%boundary%contain(x)) return
 
         if (self%points%len < 1) then
-            call self%points%push(i)
+            call self%points%push_back(i)
             done = .true.
         else
             if (.not. allocated(self%children)) call self%divide()
@@ -74,28 +75,27 @@ contains
     end subroutine divide
 
     !> query
-    recursive subroutine query(self, loc, range, i, pairs)
+    recursive pure subroutine query(self, loc, range, i, threads_pairs)
         class(octree), intent(in) :: self
         real(rk), intent(in) :: loc(:, :)
         type(sphere), intent(in) :: range
         integer, intent(in) :: i
-        type(vector), intent(inout) :: pairs
+        type(vector), intent(inout) :: threads_pairs
         integer :: j
+        real(rk) :: rdx(4)
 
         if (.not. range%intersect(self%boundary)) return
 
         if (self%points%len > 0) then
-            if (range%contain(loc(:, self%points%items(1)))) then
-                if (self%points%items(1) > i) then
-                    call pairs%push(i)
-                    call pairs%push(self%points%items(1))
-                end if
+            if (self%points%items(1) > i) then
+                call distance3d(range%center, loc(:, self%points%items(1)), rdx(1), rdx(2:4))
+                if (rdx(1) < range%radius) call threads_pairs%push([i, self%points%items(1)], rdx)
             end if
         end if
 
         if (allocated(self%children)) then
             do j = 1, 8
-                call self%children(j)%query(loc, range, i, pairs)
+                call self%children(j)%query(loc, range, i, threads_pairs)
             end do
         end if
 

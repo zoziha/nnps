@@ -2,7 +2,6 @@
 module nnps_tree2d_shape
 
     use nnps_kinds, only: rk
-    use nnps_math, only: distance2d
     implicit none
 
     private
@@ -19,7 +18,7 @@ module nnps_tree2d_shape
     type circle
         real(rk) :: center(2), radius  !! center and radius
     contains
-        procedure :: contain => circle_contain, intersect => circle_intersect
+        procedure :: intersect => circle_intersect
     end type circle
 
 contains
@@ -33,17 +32,6 @@ contains
                             x(2) >= self%bottom .and. x(2) <= self%top
 
     end function rectangle_contain
-
-    !> judgy contain
-    pure logical function circle_contain(self, x)
-        class(circle), intent(in) :: self
-        real(rk), intent(in) :: x(2)
-        real(rk) :: r
-
-        call distance2d(self%center, x, r)
-        circle_contain = r < self%radius
-
-    end function circle_contain
 
     !> judgy intersect
     pure logical function circle_intersect(self, that)
