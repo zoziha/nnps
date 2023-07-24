@@ -5,31 +5,46 @@ module nnps_key_value
     implicit none
 
     private
-    public :: key_value
+    public :: key_values
 
     !> key-value pair
     type key_value
-        integer, allocatable :: key(:)  !! key
-        type(int_vector), allocatable :: value(:)  !! value
+        integer :: key(3)  !! key
+        type(int_vector) :: value  !! value
+    end type key_value
+
+    !> key-value pairs
+    type key_values
+        type(key_value), allocatable :: items(:)  !! key-value pair
     contains
         procedure :: push_back, get_value, zeroing !, storage, clear
-    end type key_value
+    end type key_values
 
 contains
 
+    !> constructor
+    pure type(key_value) function key_value_constructor(key, value) result(self)
+        integer, intent(in) :: key(3)
+        integer, intent(in) :: value
+
+        self%key = key
+        call self%value%push_back(value)
+
+    end function key_value_constructor
+
     !> push back key-value pair
     pure subroutine push_back(self, key, value, stat)
-        class(key_value), intent(inout) :: self
+        class(key_values), intent(inout) :: self
         integer, intent(in) :: key(3)
         integer, intent(in) :: value
         logical, intent(out) :: stat
         integer :: i
 
-        if (allocated(self%key)) then
-            do i = 1, size(self%value)
-                if (all(self%key(3*i - 2:3*i) == key)) then
-                    call self%value(i)%push_back(value)
-                    if (self%value(i)%len == 1) then
+        if (allocated(self%items)) then
+            do i = 1, size(self%items)
+                if (all(self%items(i)%key == key)) then
+                    call self%items(i)%value%push_back(value)
+                    if (self%items(i)%value%len == 1) then
                         stat = .true.
                     else
                         stat = .false.
@@ -37,17 +52,10 @@ contains
                     return
                 end if
             end do
-            self%key = [self%key, key]
-            block
-                type(int_vector) :: tmp
-                call tmp%push_back(value)
-                self%value = [self%value, tmp]
-                stat = .true.
-            end block
+            self%items = [self%items, key_value_constructor(key, value)]
+            stat = .true.
         else
-            allocate (self%key, source=key)
-            allocate (self%value(1))
-            call self%value(1)%push_back(value)
+            allocate (self%items(1), source=key_value_constructor(key, value))
             stat = .true.
         end if
 
@@ -55,25 +63,25 @@ contains
 
     !> zeroing key-value pair
     elemental subroutine zeroing(self)
-        class(key_value), intent(inout) :: self
+        class(key_values), intent(inout) :: self
 
-        if (allocated(self%key)) then
-            where (self%value(:)%len /= 0) self%value(:)%len = 0
+        if (allocated(self%items)) then
+            where (self%items(:)%value%len /= 0) self%items(:)%value%len = 0
         end if
 
     end subroutine zeroing
 
     !> get value @todo improve performance
     subroutine get_value(self, key, ptr)
-        class(key_value), intent(in), target :: self
+        class(key_values), intent(in), target :: self
         integer, intent(in) :: key(3)
         integer, pointer, intent(inout) :: ptr(:)
         integer :: i
 
-        if (.not. allocated(self%key)) return
-        do i = 1, size(self%value)
-            if (all(self%key(3*i - 2:3*i) == key)) then
-                ptr => self%value(i)%items(1:self%value(i)%len)
+        if (.not. allocated(self%items)) return
+        do i = 1, size(self%items)
+            if (all(self%items(i)%key == key)) then
+                ptr => self%items(i)%value%items(1:self%items(i)%value%len)
                 return
             end if
         end do

@@ -23,6 +23,8 @@ To use `nnps` within your `fpm` project, add the following lines to your `fpm.to
 nnps = { git="https://github.com/zoziha/nnps" }
 ```
 
+**Note: windows-ifort bug, may use static links to cause problems with allocatable arrays! Please use the `/libs:dll` compile option!**
+
 ### Parallel
 
 For 2D/3D NNPS, OpenMP is used for parallel acceleration, and parallel threads can be set through the `OMP_NUM_THREADS` environment variable.
@@ -57,7 +59,7 @@ program example_direct2d
 end program example_direct2d
 !  *** direct find (2D)
 ! [vector: 4] pairs index:
-! 1, 3, 3, 4
+! 1, 4, 3, 4
 ! [matrix: 2*4] pairs coordinates:
 !  0.000E+00,  5.000E-01,  1.000E+00,  5.000E-01;
 !  1.000E+00,  1.000E+00,  1.000E+00,  1.000E+00

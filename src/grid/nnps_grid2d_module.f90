@@ -97,9 +97,14 @@ contains
                 end do
 
                 call grid(idx(5))%get_value(ijk(:, 5), values)
-                call find_nearby_particles(values, &
+                if (self%threads_idxs(thread_id)%len == 0) then
+                    if (size(values) > 1) call self_grid_neighbors(values, &
+                        &self%threads_pairs(thread_id))
+                else
+                    call adjacent_grid_neighbors(values, &
                     &self%threads_idxs(thread_id)%items(1:self%threads_idxs(thread_id)%len), &
                     &self%threads_pairs(thread_id))
+                end if
 
                 nullify (values)
 
@@ -114,7 +119,7 @@ contains
 
     contains
 
-        pure subroutine find_nearby_particles(main, found, threads_pairs)
+        pure subroutine adjacent_grid_neighbors(main, found, threads_pairs)
             integer, intent(in) :: main(:)
             integer, intent(in) :: found(:)
             type(vector), intent(inout) :: threads_pairs
@@ -137,7 +142,25 @@ contains
 
             end do
 
-        end subroutine find_nearby_particles
+        end subroutine adjacent_grid_neighbors
+
+        pure subroutine self_grid_neighbors(main, threads_pairs)
+            integer, intent(in) :: main(:)
+            type(vector), intent(inout) :: threads_pairs
+            integer :: ii, jj
+            real(rk) :: rdx(3)
+
+            do ii = 1, size(main)
+
+                do jj = ii + 1, size(main)
+                    call distance2d(self%loc(:, main(ii)), &
+                                    self%loc(:, main(jj)), rdx(1), rdx(2:3))
+                    if (rdx(1) < radius) call threads_pairs%push([main(ii), main(jj)], rdx)
+                end do
+
+            end do
+
+        end subroutine self_grid_neighbors
 
     end subroutine query
 

@@ -1,7 +1,7 @@
 !> spatial Hashing
 module nnps_spatial_hashing
 
-    use nnps_key_value, only: key_value
+    use nnps_key_value, only: key_values
     implicit none
 
     private
@@ -9,7 +9,7 @@ module nnps_spatial_hashing
 
     !> spatial Hashing
     type shash_tbl
-        type(key_value), allocatable :: buckets(:)  !! Buckets
+        type(key_values), allocatable :: buckets(:)  !! Buckets
     contains
         procedure :: allocate => chash_tbl_allocate, clear, zeroing, set, hash
     end type shash_tbl
