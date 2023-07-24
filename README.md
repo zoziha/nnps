@@ -2,7 +2,7 @@
 
 # Nearest Neighbor Particle Search
 
-![NNPS](https://img.shields.io/badge/NNPS-v1.0.0-blueviolet)
+![NNPS](https://img.shields.io/badge/NNPS-v1.1.0-blueviolet)
 ![Language](https://img.shields.io/badge/-Fortran-734f96?logo=fortran&logoColor=white)
 [![license](https://img.shields.io/badge/License-MIT-pink)](LICENSE)
 
@@ -23,7 +23,7 @@ To use `nnps` within your `fpm` project, add the following lines to your `fpm.to
 nnps = { git="https://github.com/zoziha/nnps" }
 ```
 
-**Note: windows-ifort bug, may use static links to cause problems with allocatable arrays! Please use the `/libs:dll` compile option!**
+**Note: Windows-ifort bug, Using static compilation will cause problems with allocatable arrays! Please use the `/libs:dll` compile option!**
 
 ### Parallel
 
