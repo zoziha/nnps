@@ -68,7 +68,8 @@ contains
 
         !$omp parallel do private(i) schedule(dynamic)
         do i = 1, size(self%loc, 2)
-            call self%tree%query(self%loc, circle(self%loc(:, i), radius), i, self%threads_pairs(omp_get_thread_num()))
+            call self%tree%query(self%loc, circle(self%loc(:, i), radius), i, &
+                                 self%threads_pairs(omp_get_thread_num()))
         end do
 
         call self%pairs%merge(self%threads_pairs)
