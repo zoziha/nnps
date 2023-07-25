@@ -1,17 +1,17 @@
 !> spatial Hashing
 module nnps_spatial_hashing
 
-    use nnps_key_value, only: key_values
+    use nnps_key_value, only: key_values, key_values_finalizer
     implicit none
 
     private
-    public :: shash_tbl
+    public :: shash_tbl, shash_tbl_finalizer
 
     !> spatial Hashing
     type shash_tbl
         type(key_values), allocatable :: buckets(:)  !! Buckets
     contains
-        procedure :: allocate => chash_tbl_allocate, clear, zeroing, set, hash
+        procedure :: allocate => shash_tbl_allocate, zeroing, set, hash
     end type shash_tbl
 
 contains
@@ -27,23 +27,24 @@ contains
     end function hash
 
     !> Allocate
-    pure subroutine chash_tbl_allocate(self, m)
+    pure subroutine shash_tbl_allocate(self, m)
         class(shash_tbl), intent(inout) :: self
         integer, intent(in) :: m
 
         allocate (self%buckets(0:m - 1))
 
-    end subroutine chash_tbl_allocate
+    end subroutine shash_tbl_allocate
 
     !> Clean up
-    pure subroutine clear(self)
-        class(shash_tbl), intent(inout) :: self
+    pure subroutine shash_tbl_finalizer(self)
+        type(shash_tbl), intent(inout) :: self
 
         if (allocated(self%buckets)) then
+            call key_values_finalizer(self%buckets(:))
             deallocate (self%buckets)
         end if
 
-    end subroutine clear
+    end subroutine shash_tbl_finalizer
 
     !> Zeroing
     pure subroutine zeroing(self)

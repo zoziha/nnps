@@ -1,11 +1,11 @@
 !> key-value
 module nnps_key_value
 
-    use nnps_int_vector, only: int_vector
+    use nnps_int_vector, only: int_vector, int_vector_finalizer
     implicit none
 
     private
-    public :: key_values
+    public :: key_values, key_values_finalizer
 
     !> key-value pair
     type key_value
@@ -21,6 +21,25 @@ module nnps_key_value
     end type key_values
 
 contains
+
+    !> finalizer
+    elemental subroutine key_value_finalizer(self)
+        type(key_value), intent(inout) :: self
+
+        call int_vector_finalizer(self%value)
+
+    end subroutine key_value_finalizer
+
+    !> finalizer
+    elemental subroutine key_values_finalizer(self)
+        type(key_values), intent(inout) :: self
+
+        if (allocated(self%items)) then
+            call key_value_finalizer(self%items)
+            deallocate (self%items)
+        end if
+
+    end subroutine key_values_finalizer
 
     !> constructor
     pure type(key_value) function key_value_constructor(key, value) result(self)

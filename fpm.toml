@@ -14,6 +14,8 @@ openmp = "*"
 [dev-dependencies]
 test-drive = { git = "https://github.com/fortran-lang/test-drive", tag = "v0.4.0" }
 display = { git = "https://gitee.com/zoziha/display" }
+random = { git = "https://gitee.com/zoziha/random" }
+timer = { git = "https://gitee.com/zoziha/timer" }
 
 [install]
 library = true
