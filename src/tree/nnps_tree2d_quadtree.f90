@@ -23,11 +23,14 @@ module nnps_tree2d_quadtree
 contains
 
     !> finalizer
-    recursive elemental subroutine quadtree_finalizer(self)
+    recursive subroutine quadtree_finalizer(self)
         type(quadtree), intent(inout) :: self
+        integer :: i
 
         if (allocated(self%children)) then
-            call quadtree_finalizer(self%children)
+            do i = 1, 4
+                call quadtree_finalizer(self%children(i))
+            end do
             deallocate (self%children)
         end if
         call int_vector_finalizer(self%points)
