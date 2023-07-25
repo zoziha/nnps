@@ -1,4 +1,4 @@
-!> Folat point kind
+!> Float point kind
 module nnps_kinds
 
     implicit none
