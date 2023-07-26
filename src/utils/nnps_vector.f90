@@ -5,7 +5,7 @@ module nnps_vector
     implicit none
 
     private
-    public :: vector
+    public :: vector, vector_finalizer
 
     !> Vector data vector
     type vector
@@ -17,7 +17,6 @@ module nnps_vector
     contains
         procedure :: init
         procedure :: push, merge, storage
-        procedure :: clear
         procedure, private :: extend
     end type vector
 
@@ -107,12 +106,12 @@ contains
     end function storage
 
     !> 向量清空
-    pure subroutine clear(self)
-        class(vector), intent(inout) :: self
+    elemental subroutine vector_finalizer(self)
+        type(vector), intent(inout) :: self
 
-        deallocate (self%items, self%ritems)
-        self%len = 0
+        if (allocated(self%items)) deallocate (self%items)
+        if (allocated(self%ritems)) deallocate (self%ritems)
 
-    end subroutine clear
+    end subroutine vector_finalizer
 
 end module nnps_vector

@@ -4,12 +4,12 @@ module nnps_tree2d_quadtree
     use nnps_kinds, only: rk
     use nnps_tree2d_shape, only: circle, rectangle
     use nnps_vector, only: vector
-    use nnps_int_vector, only: int_vector
+    use nnps_int_vector, only: int_vector, int_vector_finalizer
     use nnps_math, only: distance2d
     implicit none
 
     private
-    public :: quadtree
+    public :: quadtree, quadtree_finalizer
 
     !> quad tree
     type quadtree
@@ -21,6 +21,21 @@ module nnps_tree2d_quadtree
     end type quadtree
 
 contains
+
+    !> finalizer
+    recursive subroutine quadtree_finalizer(self)
+        type(quadtree), intent(inout) :: self
+        integer :: i
+
+        if (allocated(self%children)) then
+            do i = 1, 4
+                call quadtree_finalizer(self%children(i))
+            end do
+            deallocate (self%children)
+        end if
+        call int_vector_finalizer(self%points)
+
+    end subroutine quadtree_finalizer
 
     !> initialize
     subroutine init(self, left, right, top, bottom)

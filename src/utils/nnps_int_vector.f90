@@ -4,7 +4,7 @@ module nnps_int_vector
     implicit none
 
     private
-    public :: int_vector
+    public :: int_vector, int_vector_finalizer
 
     !> int_vector integer vector
     type int_vector
@@ -12,7 +12,6 @@ module nnps_int_vector
         integer, allocatable :: items(:)  !! integer vector
     contains
         procedure :: push_back, storage, push_back_items
-        procedure :: clear
         procedure, private :: extend
     end type int_vector
 
@@ -74,12 +73,12 @@ contains
     end function storage
 
     !> 向量清空
-    elemental subroutine clear(self)
-        class(int_vector), intent(inout) :: self
+    elemental subroutine int_vector_finalizer(self)
+        type(int_vector), intent(inout) :: self
 
-        deallocate (self%items)
+        if (allocated(self%items)) deallocate (self%items)
 
-    end subroutine clear
+    end subroutine int_vector_finalizer
 
     !> Zeroing
     elemental subroutine zeroing(self)
