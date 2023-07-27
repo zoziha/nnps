@@ -17,10 +17,24 @@ module nnps_key_value
     type key_values
         type(key_value), allocatable :: items(:)  !! key-value pair
     contains
-        procedure :: push_back, get_value, zeroing !, storage, clear
+        procedure :: push_back, get_value, zeroing, storage!, clear
     end type key_values
 
 contains
+
+    !> storage
+    integer function storage(self)
+        class(key_values), intent(in) :: self
+        integer :: i
+
+        if (allocated(self%items)) then
+            storage = storage_size(self%items)*size(self%items)
+            do i = 1, size(self%items)
+                storage = storage + self%items(i)%value%storage()
+            end do
+        end if
+
+    end function storage
 
     !> finalizer
     elemental subroutine key_value_finalizer(self)

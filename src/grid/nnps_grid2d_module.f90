@@ -13,6 +13,7 @@ module nnps_grid2d_module
     public :: nnps_grid2d, nnps_grid2d_finalizer
 
     !> 2d grid
+    !> @note shash_tbl/pairs(threads_pairs) are the No.1/No.2 memory consumers
     type nnps_grid2d
         real(rk), pointer :: loc(:, :)  !! particle 2d coordinate
         type(shash_tbl) :: tbl  !! background grids hash table
@@ -183,24 +184,22 @@ contains
 
     end subroutine query
 
-    !> storage @todo to complete
-    integer function storage(self)
-        class(nnps_grid2d), intent(in) :: self
-        integer :: i, j
+    !> storage in bits (shash_tbl/pairs/all)
+    function storage(self)
+        class(nnps_grid2d), intent(in) :: self  !! nnps_grid2d
+        integer, dimension(3) :: storage
+        integer :: i
 
-        storage = storage_size(self) + storage_size(self%loc) + self%pairs%storage()
+        storage(1) = self%tbl%storage()
+        storage(2) = self%pairs%storage()
+        storage(3) = storage_size(self) + storage(1) + storage(2) + storage_size(self%loc) + self%iks%storage()
 
-        print *, 'storage_size = ', storage
-        ! do j = 1, size(self%grids, 2)
-        !     do i = 1, size(self%grids, 1)
-        !         storage = storage + self%grids(i, j)%storage()
-        !     end do
-        ! end do
-        ! print *, 'storage_size = ', storage
         do i = 0, size(self%threads_pairs) - 1
-            storage = storage + self%threads_pairs(i)%storage()
+            storage(3) = storage(3) + self%threads_pairs(i)%storage() + &
+                      self%threads_idxs(i)%storage() + &
+                      storage_size(self%threads_pairs(i)) + &
+                      storage_size(self%threads_idxs(i))
         end do
-        print *, 'storage_size = ', storage
 
     end function storage
 

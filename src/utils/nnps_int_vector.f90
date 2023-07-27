@@ -68,7 +68,7 @@ contains
     pure integer function storage(self)
         class(int_vector), intent(in) :: self
 
-        storage = storage_size(self) + storage_size(self%items)*size(self%items)
+        storage = storage_size(self%items)*size(self%items)
 
     end function storage
 

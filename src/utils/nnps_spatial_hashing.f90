@@ -11,7 +11,8 @@ module nnps_spatial_hashing
     type shash_tbl
         type(key_values), allocatable :: buckets(:)  !! Buckets
     contains
-        procedure :: allocate => shash_tbl_allocate, zeroing, set, hash
+        procedure :: allocate => shash_tbl_allocate, zeroing, set, hash, &
+            storage, activate_buckets
     end type shash_tbl
 
 contains
@@ -63,5 +64,29 @@ contains
         call self%buckets(self%hash(key))%push_back(key, value, stat)
 
     end subroutine set
+
+    !> Storage
+    integer function storage(self)
+        class(shash_tbl), intent(in) :: self
+        integer :: i
+
+        storage = storage_size(self%buckets)*size(self%buckets)
+        do i = 1, size(self%buckets)
+            storage = storage + self%buckets(i)%storage()
+        end do
+
+    end function storage
+
+    !> Get number of active buckets
+    integer function activate_buckets(self)
+        class(shash_tbl), intent(in) :: self
+        integer :: i, n
+
+        activate_buckets = 0
+        do i = 1, size(self%buckets)
+            if (allocated(self%buckets(i)%items)) activate_buckets = activate_buckets + 1
+        end do
+
+    end function activate_buckets
 
 end module nnps_spatial_hashing

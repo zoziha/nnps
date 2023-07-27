@@ -100,7 +100,7 @@ contains
     pure integer function storage(self)
         class(vector), intent(in) :: self
 
-        storage = storage_size(self) + storage_size(self%items)*size(self%items) + &
+        storage = storage_size(self%items)*size(self%items) + &
                   storage_size(self%ritems)*size(self%ritems)
 
     end function storage
