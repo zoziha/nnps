@@ -192,13 +192,14 @@ contains
 
         storage(1) = self%tbl%storage()
         storage(2) = self%pairs%storage()
-        storage(3) = storage_size(self) + storage(1) + storage(2) + storage_size(self%loc) + self%iks%storage()
+        storage(3) = storage_size(self) + storage(1) + storage(2) + storage_size(self%loc) + &
+                     self%iks%storage()
 
         do i = 0, size(self%threads_pairs) - 1
             storage(3) = storage(3) + self%threads_pairs(i)%storage() + &
-                      self%threads_idxs(i)%storage() + &
-                      storage_size(self%threads_pairs(i)) + &
-                      storage_size(self%threads_idxs(i))
+                         self%threads_idxs(i)%storage() + &
+                         storage_size(self%threads_pairs(i)) + &
+                         storage_size(self%threads_idxs(i))
         end do
 
     end function storage
