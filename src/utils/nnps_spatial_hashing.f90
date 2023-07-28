@@ -12,7 +12,7 @@ module nnps_spatial_hashing
         type(key_values), allocatable :: buckets(:)  !! Buckets
     contains
         procedure :: allocate => shash_tbl_allocate, zeroing, set, hash, &
-            storage, activate_buckets
+            storage, activated_buckets
     end type shash_tbl
 
 contains
@@ -77,16 +77,22 @@ contains
 
     end function storage
 
-    !> Get number of active buckets
-    integer function activate_buckets(self)
+    !> Get number of activated buckets (activated buckets, recyclable buckets)
+    function activated_buckets(self)
         class(shash_tbl), intent(in) :: self
+        integer, dimension(2) :: activated_buckets
         integer :: i, n
 
-        activate_buckets = 0
+        activated_buckets = 0
         do i = 1, size(self%buckets)
-            if (allocated(self%buckets(i)%items)) activate_buckets = activate_buckets + 1
+            if (allocated(self%buckets(i)%items)) then
+                activated_buckets(1) = activated_buckets(1) + 1
+                if (all(self%buckets(i)%items(:)%value%len == 0)) then
+                    activated_buckets(2) = activated_buckets(2) + 1
+                end if
+            end if
         end do
 
-    end function activate_buckets
+    end function activated_buckets
 
 end module nnps_spatial_hashing
