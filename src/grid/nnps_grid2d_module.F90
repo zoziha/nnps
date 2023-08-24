@@ -195,7 +195,7 @@ contains
 
     end subroutine query
 
-    !> storage in bits (shash_tbl/pairs/all)
+    !> storage in bits (shash_tbl/all)
     function storage(self)
         class(nnps_grid2d), intent(in) :: self  !! nnps_grid2d
         integer, dimension(2) :: storage

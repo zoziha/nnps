@@ -6,7 +6,9 @@ module nnps_grid3d_module
     use nnps_int_vector, only: int_vector, int_vector_finalizer
     use nnps_spatial_hashing, only: shash_tbl, shash_tbl_finalizer
     use nnps_math, only: distance3d, sqrt_eps
+#ifdef OMP
     use omp_lib, only: omp_get_thread_num, omp_get_max_threads
+#endif
     implicit none
 
     private
@@ -16,7 +18,6 @@ module nnps_grid3d_module
     type nnps_grid3d
         real(rk), pointer :: loc(:, :)  !! particle 3d coordinate
         type(shash_tbl) :: tbl  !! background grid hash table
-        type(vector) :: pairs  !! particle pairs
         type(int_vector), private :: iks  !! unique keys
         type(vector), allocatable, private :: threads_pairs(:)  !! thread local pairs
         type(int_vector), allocatable, private :: threads_idxs(:)  !! thread local indexes
@@ -32,8 +33,8 @@ contains
 
         if (associated(self%loc)) nullify (self%loc)
         call shash_tbl_finalizer(self%tbl)
-        call vector_finalizer(self%pairs)
         call int_vector_finalizer(self%iks)
+
         if (allocated(self%threads_pairs)) then
             call vector_finalizer(self%threads_pairs)
             deallocate (self%threads_pairs)
@@ -52,9 +53,13 @@ contains
         integer, intent(in) :: n  !! number of particles
 
         self%loc => loc
+
+#ifdef OMP
         allocate (self%threads_pairs(0:omp_get_max_threads() - 1), &
                   self%threads_idxs(0:omp_get_max_threads() - 1))
-        call self%pairs%init(3, 12*n)
+#else
+        allocate (self%threads_pairs(0:0), self%threads_idxs(0:0))
+#endif
         call self%threads_pairs(:)%init(3, n)
 
         call self%tbl%allocate(m=2*n)
@@ -75,9 +80,10 @@ contains
 
         call self%tbl%zeroing()
         min = minval(self%loc, dim=2) - sqrt_eps
+        thread_id = 0
 
         self%iks%len = 0
-        do i = 1, n
+        do i = 1, n  !@todo: parallelize
             ik = ceiling((self%loc(:, i) - min)/radius)
             call self%tbl%set(key=ik, value=i, stat=lstat)
             if (lstat) call self%iks%push_back_items(ik, 3)  ! collect unique keys
@@ -86,7 +92,9 @@ contains
         self%threads_pairs%len = 0
         associate (grid => self%tbl%buckets, iks => self%iks%items)
 
+#ifdef OMP
             !$omp parallel do private(i, idx, ijk, values, thread_id) schedule(dynamic)
+#endif
             do i = 1, self%iks%len, 3
 
                 ijk(:, 1) = [iks(i:i + 2) - 1]  ! 3D L style, 13 neighbors (9 + 4)
@@ -108,7 +116,9 @@ contains
                     idx(j) = self%tbl%hash(ijk(:, j))
                 end do
 
+#ifdef OMP
                 thread_id = omp_get_thread_num()
+#endif
                 self%threads_idxs(thread_id)%len = 0
 
                 nullify (values)
@@ -136,10 +146,12 @@ contains
 
         end associate
 
-        call self%pairs%merge(self%threads_pairs)
+#ifdef OMP
+        call self%threads_pairs(0)%merge(self%threads_pairs)
+#endif
 
-        pairs => self%pairs%items(1:self%pairs%len*2)
-        rdxs => self%pairs%ritems(1:self%pairs%len*4)
+        pairs => self%threads_pairs(0)%items(1:self%threads_pairs(0)%len*2)
+        rdxs => self%threads_pairs(0)%ritems(1:self%threads_pairs(0)%len*4)
 
     contains
 
@@ -188,14 +200,21 @@ contains
 
     end subroutine query
 
-    !> storage @todo to complete
-    pure integer function storage(self)
-        class(nnps_grid3d), intent(in) :: self
+    !> storage in bits (shash_tbl/all)
+    function storage(self)
+        class(nnps_grid3d), intent(in) :: self  !! nnps_grid3d
+        integer, dimension(2) :: storage
         integer :: i
 
-        storage = storage_size(self) + storage_size(self%loc) + self%pairs%storage()
-        do i = 1, size(self%threads_pairs)
-            storage = storage + self%threads_pairs(i)%storage()
+        storage(1) = self%tbl%storage()
+        storage(2) = storage_size(self) + storage(1) + storage_size(self%loc) + &
+                     self%iks%storage()
+
+        do i = 0, size(self%threads_pairs) - 1
+            storage(2) = storage(2) + self%threads_pairs(i)%storage() + &
+                         self%threads_idxs(i)%storage() + &
+                         storage_size(self%threads_pairs(i)) + &
+                         storage_size(self%threads_idxs(i))
         end do
 
     end function storage

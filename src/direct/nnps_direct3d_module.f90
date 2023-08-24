@@ -55,10 +55,10 @@ contains
             end do
         end do
 
-        call self%pairs%merge(self%threads_pairs)
+        call self%threads_pairs(0)%merge(self%threads_pairs)
 
-        pairs => self%pairs%items(1:self%pairs%len*2)
-        rdxs => self%pairs%ritems(1:self%pairs%len*4)
+        pairs => self%threads_pairs(0)%items(1:self%threads_pairs(0)%len*2)
+        rdxs => self%threads_pairs(0)%ritems(1:self%threads_pairs(0)%len*4)
 
     end subroutine query
 
