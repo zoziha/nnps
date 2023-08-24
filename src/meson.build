@@ -4,7 +4,7 @@ filenames = [
     'direct/nnps_direct2d_module.f90',
     'direct/nnps_direct3d_module.f90',
     'grid/nnps_grid1d_module.f90',
-    'grid/nnps_grid2d_module.f90',
+    'grid/nnps_grid2d_module.F90',
     'grid/nnps_grid3d_module.f90',
     'tree/nnps_tree1d_module.f90',
     'tree/nnps_tree1d_shape.f90',

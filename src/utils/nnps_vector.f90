@@ -85,7 +85,7 @@ contains
         end do
 
         !$omp parallel do private(i)
-        do i = 1, size(that)
+        do i = 2, size(that)
             if (that(i)%len == 0) cycle
             self%items((idx(i) - that(i)%len)*2 + 1:idx(i)*2) = &
                 that(i)%items(1:that(i)%len*2)

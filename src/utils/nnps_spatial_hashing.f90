@@ -71,7 +71,7 @@ contains
         integer :: i
 
         storage = storage_size(self%buckets)*size(self%buckets)
-        do i = 1, size(self%buckets)
+        do i = 0, size(self%buckets) - 1
             storage = storage + self%buckets(i)%storage()
         end do
 
@@ -81,10 +81,10 @@ contains
     function activated_buckets(self)
         class(shash_tbl), intent(in) :: self
         integer, dimension(2) :: activated_buckets
-        integer :: i, n
+        integer :: i
 
         activated_buckets = 0
-        do i = 1, size(self%buckets)
+        do i = 0, size(self%buckets) - 1
             if (allocated(self%buckets(i)%items)) then
                 activated_buckets(1) = activated_buckets(1) + 1
                 if (all(self%buckets(i)%items(:)%value%len == 0)) then

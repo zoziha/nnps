@@ -32,6 +32,8 @@ contains
             do i = 1, size(self%items)
                 storage = storage + self%items(i)%value%storage()
             end do
+        else
+            storage = 0
         end if
 
     end function storage

@@ -31,8 +31,8 @@ program main
     call cpu_time(t2)
     call display(t2 - t1, 'cpu_time:', inline=.true.)
     call display(pairs, 'pairs:')
-    call display(real(nnps_grid%storage())/(8*1024*1024), "storage (tbl/pairs/all):")
-    call display(nnps_grid%tbl%activated_buckets(), "activated_buckets:")
+    call display(real(nnps_grid%storage())/(8*1024*1024), "storage (tbl/all):")
+    call display(nnps_grid%tbl%activated_buckets(), "activated_buckets (activated/recyclable):")
     call nnps_grid2d_finalizer(nnps_grid)  ! finalize
 
 end program main
