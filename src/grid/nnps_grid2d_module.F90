@@ -15,7 +15,7 @@ module nnps_grid2d_module
     public :: nnps_grid2d, nnps_grid2d_finalizer
 
     !> 2d grid
-    !> @note shash_tbl/pairs(threads_pairs) are the No.1/No.2 memory consumers
+    !> @note pairs(threads_pairs)/shash_tbl are the No.1/No.2 memory consumers
     type nnps_grid2d
         real(rk), pointer :: loc(:, :)  !! particle 2d coordinate
         type(shash_tbl) :: tbl  !! background grids hash table
@@ -63,7 +63,7 @@ contains
 #endif
         call self%threads_pairs(:)%init(2, n)
 
-        call self%tbl%allocate(m=2*n)
+        call self%tbl%allocate(m=n)
 
     end subroutine init
 
@@ -99,11 +99,11 @@ contains
 #endif
             do i = 1, self%iks%len, 3
 
-                ijk(:, 1) = [iks(i) - 1, iks(i + 1) - 1, iks(i + 2)]
+                ijk(:, 1) = [iks(i:i + 1) - 1, iks(i + 2)]
                 ijk(:, 2) = [iks(i), iks(i + 1) - 1, iks(i + 2)]
                 ijk(:, 3) = [iks(i) + 1, iks(i + 1) - 1, iks(i + 2)]
-                ijk(:, 4) = [iks(i) - 1, iks(i + 1), iks(i + 2)]
-                ijk(:, 5) = [iks(i:i + 2)]
+                ijk(:, 4) = [iks(i) - 1, iks(i + 1:i + 2)]
+                ijk(:, 5) = iks(i:i + 2)
 
                 ! U style, L style, 4 neighbors         !          ___________
                 idx = [self%tbl%hash(ijk(:, 1)), &      !          |         |
@@ -132,10 +132,9 @@ contains
                         &self%threads_pairs(thread_id))
                 else
                     call adjacent_grid_neighbors(values, &
-                    &self%threads_idxs(thread_id)%items(1:self%threads_idxs(thread_id)%len), &
-                    &self%threads_pairs(thread_id))
+                        &self%threads_idxs(thread_id)%items(1:self%threads_idxs(thread_id)%len), &
+                        &self%threads_pairs(thread_id))
                 end if
-
                 nullify (values)
 
             end do
