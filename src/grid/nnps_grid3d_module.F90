@@ -141,7 +141,7 @@ contains
 
     contains
 
-        subroutine adjacent_grid_neighbors(main, found, threads_pairs)
+        pure subroutine adjacent_grid_neighbors(main, found, threads_pairs)
             integer, intent(in) :: main(:)
             integer, intent(in) :: found(:)
             type(vector), intent(inout) :: threads_pairs
@@ -166,7 +166,7 @@ contains
 
         end subroutine adjacent_grid_neighbors
 
-        subroutine self_grid_neighbors(main, threads_pairs)
+        pure subroutine self_grid_neighbors(main, threads_pairs)
             integer, intent(in) :: main(:)
             type(vector), intent(inout) :: threads_pairs
             integer :: ii, jj

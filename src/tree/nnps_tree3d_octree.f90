@@ -75,7 +75,7 @@ contains
     end subroutine divide
 
     !> query
-    recursive subroutine query(self, loc, range, i, threads_pairs)
+    recursive pure subroutine query(self, loc, range, i, threads_pairs)
         class(octree), intent(in) :: self
         real(rk), intent(in) :: loc(:, :)
         type(sphere), intent(in) :: range
