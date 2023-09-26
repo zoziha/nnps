@@ -2,7 +2,7 @@
 
 # Nearest Neighbor Particle Search
 
-![NNPS](https://img.shields.io/badge/NNPS-v1.1.0-blueviolet)
+![NNPS](https://img.shields.io/badge/NNPS-v1.2.0-blueviolet)
 ![Language](https://img.shields.io/badge/-Fortran-734f96?logo=fortran&logoColor=white)
 [![license](https://img.shields.io/badge/License-MIT-pink)](LICENSE)
 

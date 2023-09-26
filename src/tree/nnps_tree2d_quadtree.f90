@@ -85,7 +85,7 @@ contains
     end subroutine divide
 
     !> query
-    recursive pure subroutine query(self, loc, range, i, threads_pairs)
+    recursive subroutine query(self, loc, range, i, threads_pairs)
         class(quadtree), intent(in) :: self
         real(rk), intent(in) :: loc(:, :)
         type(circle), intent(in) :: range

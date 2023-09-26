@@ -6,9 +6,7 @@ module nnps_grid2d_module
     use nnps_int_vector, only: int_vector, int_vector_finalizer
     use nnps_spatial_hashing, only: shash_tbl, shash_tbl_finalizer
     use nnps_math, only: distance2d, sqrt_eps
-#ifdef OMP
     use omp_lib, only: omp_get_thread_num, omp_get_max_threads
-#endif
     implicit none
 
     private
@@ -55,12 +53,9 @@ contains
 
         self%loc => loc
 
-#ifdef OMP
         allocate (self%threads_pairs(0:omp_get_max_threads() - 1), &
                   self%threads_idxs(0:omp_get_max_threads() - 1))
-#else
-        allocate (self%threads_pairs(0:0), self%threads_idxs(0:0))
-#endif
+
         call self%threads_pairs(:)%init(2, n)
 
         call self%tbl%allocate(m=n)
@@ -81,7 +76,6 @@ contains
 
         call self%tbl%zeroing()
         min = minval(self%loc, 2) - sqrt_eps
-        thread_id = 0
 
         self%iks%len = 0
         ik(3) = 1
@@ -94,9 +88,7 @@ contains
         self%threads_pairs%len = 0
         associate (grid => self%tbl%buckets, iks => self%iks%items)
 
-#ifdef OMP
             !$omp parallel do private(i, idx, ijk, values, thread_id) schedule(dynamic)
-#endif
             do i = 1, self%iks%len, 3
 
                 ijk(:, 1) = [iks(i:i + 1) - 1, iks(i + 2)]
@@ -105,16 +97,10 @@ contains
                 ijk(:, 4) = [iks(i) - 1, iks(i + 1:i + 2)]
                 ijk(:, 5) = iks(i:i + 2)
 
-                ! U style, L style, 4 neighbors         !          ___________
-                idx = [self%tbl%hash(ijk(:, 1)), &      !          |         |
-                       self%tbl%hash(ijk(:, 2)), &      !  - - -   | |     | |
-                       self%tbl%hash(ijk(:, 3)), &      !  x o -   | |     | |
-                       self%tbl%hash(ijk(:, 4)), &      !  x x x   | |_____| |
-                       self%tbl%hash(ijk(:, 5))]        !          |_________|
+                ! U style, L style, 4 neighbors
+                idx = [(self%tbl%hash(ijk(:, j)), j=1, 5)]
 
-#ifdef OMP
                 thread_id = omp_get_thread_num()
-#endif
                 self%threads_idxs(thread_id)%len = 0
 
                 nullify (values)
@@ -141,15 +127,13 @@ contains
 
         end associate
 
-#ifdef OMP
-        call self%threads_pairs(0)%merge(self%threads_pairs)
-#endif
+        if (size(self%threads_pairs) > 1) call self%threads_pairs(0)%merge(self%threads_pairs)
         pairs => self%threads_pairs(0)%items(1:self%threads_pairs(0)%len*2)
         rdxs => self%threads_pairs(0)%ritems(1:self%threads_pairs(0)%len*3)
 
     contains
 
-        pure subroutine adjacent_grid_neighbors(main, found, threads_pairs)
+        subroutine adjacent_grid_neighbors(main, found, threads_pairs)
             integer, intent(in) :: main(:)
             integer, intent(in) :: found(:)
             type(vector), intent(inout) :: threads_pairs
@@ -174,7 +158,7 @@ contains
 
         end subroutine adjacent_grid_neighbors
 
-        pure subroutine self_grid_neighbors(main, threads_pairs)
+        subroutine self_grid_neighbors(main, threads_pairs)
             integer, intent(in) :: main(:)
             type(vector), intent(inout) :: threads_pairs
             integer :: ii, jj

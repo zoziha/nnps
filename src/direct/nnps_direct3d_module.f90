@@ -55,7 +55,7 @@ contains
             end do
         end do
 
-        call self%threads_pairs(0)%merge(self%threads_pairs)
+        if (size(self%threads_pairs) > 1) call self%threads_pairs(0)%merge(self%threads_pairs)
 
         pairs => self%threads_pairs(0)%items(1:self%threads_pairs(0)%len*2)
         rdxs => self%threads_pairs(0)%ritems(1:self%threads_pairs(0)%len*4)
