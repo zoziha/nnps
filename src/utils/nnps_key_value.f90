@@ -77,7 +77,7 @@ contains
 
         if (allocated(self%items)) then
             do i = 1, size(self%items)
-                if (all(self%items(i)%key == key)) then
+                if (all(self%items(i)%key == key)) then  ! TODO: 耗时
                     call self%items(i)%value%push_back(value)
                     if (self%items(i)%value%len == 1) then
                         stat = .true.
@@ -115,7 +115,7 @@ contains
 
         if (.not. allocated(self%items)) return
         do i = 1, size(self%items)
-            if (all(self%items(i)%key == key)) then
+            if (all(self%items(i)%key == key)) then ! TODO: 耗时
                 ptr => self%items(i)%value%items(1:self%items(i)%value%len)
                 return
             end if
