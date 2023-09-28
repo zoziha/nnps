@@ -94,7 +94,7 @@ contains
         real(rk), dimension(:), pointer, intent(out) :: rdxs  !! particle pairs distance
 
 #ifndef SERIAL
-        integer :: i, j, ik(3), ijk(3, 14), thread_id, icur, jcur
+        integer :: i, j, ik(3), ijk(3, 13), thread_id, icur, jcur
         integer, pointer :: values(:)
         integer :: istat  !! 0: first, 1: lock, 2: not first and not lock
 
@@ -104,7 +104,7 @@ contains
         self%remains(1)%len = 0
 
         !$omp parallel do private(i, ik, istat)
-        do i = 1, n  !@todo: parallelize
+        do i = 1, n  ! 第一次查询，将所有粒子的位置信息存入哈希表
             ik = ceiling(self%loc(:, i)/radius)
             call self%tbl%set(key=ik, value=i, istat=istat)
             select case (istat)
@@ -118,10 +118,10 @@ contains
         end do
 
         icur = 1
-        do  ! 第二次查询，持续将所有粒子的位置信息存入哈希表
+        do          ! 第二次查询，持续将所有粒子的位置信息存入哈希表
             jcur = 3 - icur
             self%remains(jcur)%len = 0
-            !$omp parallel do private(i, j, ik, istat) schedule(dynamic)
+            !$omp parallel do private(i, j, ik, istat)
             do i = 1, self%remains(icur)%len
                 j = self%remains(icur)%items(i)
                 ik = ceiling(self%loc(:, i)/radius)
@@ -144,7 +144,7 @@ contains
         self%threads_pairs%len = 0
         associate (grid => self%tbl%buckets, iks => self%iks(0)%items)
 
-            !$omp parallel do private(i, ijk, values, thread_id) schedule(dynamic)
+            !$omp parallel do private(i, ijk, values, thread_id)
             do i = 1, self%iks(0)%len, 3
 
                 ijk(:, 1) = iks(i:i + 2) - 1  ! 3D L style, 13 neighbors (9 + 4)
@@ -160,7 +160,6 @@ contains
                 ijk(:, 11) = [iks(i), iks(i + 1) - 1, iks(i + 2)]
                 ijk(:, 12) = [iks(i) + 1, iks(i + 1) - 1, iks(i + 2)]
                 ijk(:, 13) = [iks(i) - 1, iks(i + 1:i + 2)]
-                ijk(:, 14) = iks(i:i + 2)
 
                 thread_id = omp_get_thread_num()
                 self%threads_idxs(thread_id)%len = 0
@@ -174,7 +173,7 @@ contains
                     end if
                 end do
 
-                call grid(self%tbl%hash(ijk(:, 14)))%get_value(ijk(:, 14), values)
+                call grid(self%tbl%hash(iks(i:i + 2)))%get_value(iks(i:i + 2), values)
                 if (self%threads_idxs(thread_id)%len == 0) then
                     if (size(values) > 1) call self_grid_neighbors(values, &
                         &self%threads_pairs(thread_id))
@@ -183,6 +182,7 @@ contains
                         &self%threads_idxs(thread_id)%items(1:self%threads_idxs(thread_id)%len), &
                         &self%threads_pairs(thread_id))
                 end if
+                nullify (values)
 
             end do
 
@@ -195,7 +195,7 @@ contains
 
 #else
 
-        integer :: i, j, ik(3), pos(5), ijk(3, 14), istat
+        integer :: i, j, ik(3), pos(5), ijk(3, 13), istat
         integer, pointer :: values(:)
 
         call self%tbl%zeroing()
@@ -223,7 +223,6 @@ contains
                 ijk(:, 11) = [iks(i), iks(i + 1) - 1, iks(i + 2)]
                 ijk(:, 12) = [iks(i) + 1, iks(i + 1) - 1, iks(i + 2)]
                 ijk(:, 13) = [iks(i) - 1, iks(i + 1:i + 2)]
-                ijk(:, 14) = iks(i:i + 2)
 
                 nullify (values)
                 self%idxs%len = 0
@@ -235,12 +234,13 @@ contains
                     end if
                 end do
 
-                call self%tbl%buckets(self%tbl%hash(ijk(:, 14)))%get_value(ijk(:, 14), values)
+                call self%tbl%buckets(self%tbl%hash(iks(i:i + 2)))%get_value(iks(i:i + 2), values)
                 if (self%idxs%len == 0) then
                     if (size(values) > 1) call self_grid_neighbors(values, self%pairs)
                 else
                     call adjacent_grid_neighbors(values, self%idxs%items(1:self%idxs%len), self%pairs)
                 end if
+                nullify (values)
 
             end do
         end associate

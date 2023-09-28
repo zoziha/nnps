@@ -94,7 +94,7 @@ contains
         real(rk), pointer, dimension(:), intent(out) :: rdxs    !! particle pairs distance
 
 #ifndef SERIAL
-        integer :: i, j, ik(3), ijk(3, 5), thread_id, icur, jcur
+        integer :: i, j, ik(3), ijk(3, 4), thread_id, icur, jcur
         integer, pointer :: values(:)
         integer :: istat  !! 0: first, 1: lock, 2: not first and not lock
 
@@ -156,7 +156,7 @@ contains
                 ijk(:, 2) = [iks(i), iks(i + 1) - 1, iks(i + 2)]     !          |         |
                 ijk(:, 3) = [iks(i) + 1, iks(i + 1) - 1, iks(i + 2)] !  - - -   | |     | |
                 ijk(:, 4) = [iks(i) - 1, iks(i + 1:i + 2)]           !  x o -   | |     | |
-                ijk(:, 5) = iks(i:i + 2)                             !  x x x   | |_____| |
+                !                                                       x x x   | |_____| |
                 ! U style, L style, 4 neighbors                      !          |_________|
 
                 thread_id = omp_get_thread_num()
@@ -171,7 +171,7 @@ contains
                     end if
                 end do
 
-                call grid(self%tbl%hash(ijk(:, 5)))%get_value(ijk(:, 5), values)
+                call grid(self%tbl%hash(iks(i:i + 2)))%get_value(iks(i:i + 2), values)
                 if (self%threads_idxs(thread_id)%len == 0) then
                     if (size(values) > 1) call self_grid_neighbors(values, &
                         &self%threads_pairs(thread_id))
@@ -205,7 +205,6 @@ contains
             if (istat == 0) call self%iks%push_back_items(ik, 3)  ! collect unique keys
         end do
 
-
         self%pairs%len = 0
         associate (iks => self%iks%items)
             do i = 1, self%iks%len, 3
@@ -213,7 +212,7 @@ contains
                 ijk(:, 2) = [iks(i), iks(i + 1) - 1, iks(i + 2)]     !          |         |
                 ijk(:, 3) = [iks(i) + 1, iks(i + 1) - 1, iks(i + 2)] !  - - -   | |     | |
                 ijk(:, 4) = [iks(i) - 1, iks(i + 1:i + 2)]           !  x o -   | |     | |
-                ijk(:, 5) = iks(i:i + 2)                             !  x x x   | |_____| |
+                !                                                       x x x   | |_____| |
                 ! U style, L style, 4 neighbors                      !          |_________|
 
                 self%idxs%len = 0
@@ -226,7 +225,7 @@ contains
                     end if
                 end do
 
-                call self%tbl%buckets(self%tbl%hash(ijk(:, 5)))%get_value(ijk(:, 5), values)
+                call self%tbl%buckets(self%tbl%hash(iks(i:i + 2)))%get_value(iks(i:i + 2), values)
                 if (self%idxs%len == 0) then
                     if (size(values) > 1) call self_grid_neighbors(values, self%pairs)
                 else
