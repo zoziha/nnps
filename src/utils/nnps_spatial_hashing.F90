@@ -56,12 +56,12 @@ contains
     end subroutine zeroing
 
     !> Push
-    pure subroutine set(self, key, value, stat)
+    subroutine set(self, key, value, istat)
         class(shash_tbl), intent(inout) :: self
         integer, intent(in) :: key(3), value
-        logical, intent(out) :: stat
+        integer, intent(out) :: istat  !! 0: first, 1: lock, 2: not first and not lock
 
-        call self%buckets(self%hash(key))%push_back(key, value, stat)
+        call self%buckets(self%hash(key))%push_back(key, value, istat)
 
     end subroutine set
 

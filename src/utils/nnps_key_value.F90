@@ -68,11 +68,11 @@ contains
     end function key_value_constructor
 
     !> push back key-value pair
-    pure subroutine push_back(self, key, value, stat)
+    pure subroutine push_back(self, key, value, istat)
         class(key_values), intent(inout) :: self
         integer, intent(in) :: key(3)
         integer, intent(in) :: value
-        logical, intent(out) :: stat
+        integer, intent(out) :: istat  !! 0: first, 1: lock, 2: not first and not lock
         integer :: i
 
         if (allocated(self%items)) then
@@ -80,18 +80,18 @@ contains
                 if (all(self%items(i)%key == key)) then  ! TODO: 耗时
                     call self%items(i)%value%push_back(value)
                     if (self%items(i)%value%len == 1) then
-                        stat = .true.
+                        istat = 0
                     else
-                        stat = .false.
+                        istat = 2
                     end if
                     return
                 end if
             end do
             self%items = [self%items, key_value_constructor(key, value)]
-            stat = .true.
+            istat = 0
         else
             allocate (self%items(1), source=key_value_constructor(key, value))
-            stat = .true.
+            istat = 0
         end if
 
     end subroutine push_back
