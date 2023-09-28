@@ -103,10 +103,10 @@ contains
         self%iks%len = 0
         self%remains(1)%len = 0
 
-        !$omp parallel do private(i, ik, istat)
+        !$omp parallel do private(i, ik, istat) schedule(dynamic, 1)
         do i = 1, n  ! 第一次查询，将所有粒子的位置信息存入哈希表
-            ik(3) = 1
             ik(1:2) = ceiling(self%loc(:, i)/radius)
+            ik(3) = 1
             call self%tbl%set(key=ik, value=i, istat=istat)
             select case (istat)
             case (0)
@@ -125,8 +125,8 @@ contains
             !$omp parallel do private(i, j, ik, istat)
             do i = 1, self%remains(icur)%len
                 j = self%remains(icur)%items(i)
-                ik(3) = 1
                 ik(1:2) = ceiling(self%loc(:, i)/radius)
+                ik(3) = 1
                 call self%tbl%set(key=ik, value=j, istat=istat)
                 select case (istat)
                 case (0)
@@ -142,9 +142,6 @@ contains
         end do
 
         if (size(self%iks) > 1) call self%iks(0)%merge(self%iks)
-
-        do i = 0, size(self%threads_pairs) - 1
-        end do
 
         self%threads_pairs%len = 0
         associate (grid => self%tbl%buckets, iks => self%iks(0)%items)
