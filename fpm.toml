@@ -19,3 +19,7 @@ timer = { git = "https://gitee.com/zoziha/timer" }
 
 [install]
 library = true
+
+[preprocess.cpp]
+# 取消注释以启用串行版本
+# macros = ["SERIAL"]

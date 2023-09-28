@@ -11,7 +11,7 @@ module nnps_int_vector
         integer :: len = 0  !! true vector length
         integer, allocatable :: items(:)  !! integer vector
     contains
-        procedure :: push_back, storage, push_back_items
+        procedure :: push_back, storage, push_back_items, merge
         procedure, private :: extend
     end type int_vector
 
@@ -63,6 +63,30 @@ contains
         self%items = [self%items, tmp]  ! address of self%items may not be changed, which is good
 
     end subroutine extend
+
+    !> merge
+    subroutine merge(self, that)
+        class(int_vector), intent(inout) :: self
+        type(int_vector), intent(in) :: that(1:)
+        integer :: idx(size(that)), i
+
+        idx(1) = that(1)%len
+        do i = 2, size(that)
+            idx(i) = idx(i - 1) + that(i)%len
+        end do
+
+        do while (idx(size(that)) > size(self%items))
+            call self%extend()
+        end do
+
+        !$omp parallel do private(i)
+        do i = 2, size(that)
+            if (that(i)%len == 0) cycle
+            self%items(idx(i - 1) + 1:idx(i)) = that(i)%items(1:that(i)%len)
+        end do
+        self%len = idx(size(that))
+
+    end subroutine merge
 
     !> Storage
     pure integer function storage(self)

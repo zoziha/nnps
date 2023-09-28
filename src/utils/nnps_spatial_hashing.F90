@@ -56,12 +56,29 @@ contains
     end subroutine zeroing
 
     !> Push
-    pure subroutine set(self, key, value, stat)
+    subroutine set(self, key, value, istat)
         class(shash_tbl), intent(inout) :: self
         integer, intent(in) :: key(3), value
-        logical, intent(out) :: stat
+        integer, intent(out) :: istat  !! 0: first, 1: lock, 2: not first and not lock
 
-        call self%buckets(self%hash(key))%push_back(key, value, stat)
+#ifndef SERIAL
+        logical :: lock
+        associate (i => self%hash(key))
+            !$omp atomic read
+            lock = self%buckets(i)%lock
+            if (lock) then
+                istat = 1
+            else
+                !$omp atomic write
+                self%buckets(i)%lock = .true.
+                call self%buckets(i)%push_back(key, value, istat)
+                !$omp atomic write
+                self%buckets(i)%lock = .false.
+            end if
+        end associate
+#else
+        call self%buckets(self%hash(key))%push_back(key, value, istat)
+#endif
 
     end subroutine set
 
