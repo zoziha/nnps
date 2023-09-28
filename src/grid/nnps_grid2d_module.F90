@@ -69,7 +69,7 @@ contains
         real(rk), intent(in) :: radius  !! grid length, smoothing length
         integer, dimension(:), pointer, intent(out) :: pairs  !! particle pairs
         real(rk), pointer, dimension(:), intent(out) :: rdxs  !! particle pairs distance
-        integer :: i, j, idx(5), ik(3), ijk(3, 5), thread_id
+        integer :: i, j, ik(3), ijk(3, 5), thread_id
         integer, pointer :: values(:)
         real(rk) :: min(2)
         logical :: lstat
@@ -88,31 +88,29 @@ contains
         self%threads_pairs%len = 0
         associate (grid => self%tbl%buckets, iks => self%iks%items)
 
-            !$omp parallel do private(i, idx, ijk, values, thread_id) schedule(dynamic)
+            !$omp parallel do private(i, ijk, values, thread_id) schedule(dynamic)
             do i = 1, self%iks%len, 3
 
-                ijk(:, 1) = [iks(i:i + 1) - 1, iks(i + 2)]
-                ijk(:, 2) = [iks(i), iks(i + 1) - 1, iks(i + 2)]
-                ijk(:, 3) = [iks(i) + 1, iks(i + 1) - 1, iks(i + 2)]
-                ijk(:, 4) = [iks(i) - 1, iks(i + 1:i + 2)]
-                ijk(:, 5) = iks(i:i + 2)
-
-                ! U style, L style, 4 neighbors
-                idx = [(self%tbl%hash(ijk(:, j)), j=1, 5)]
+                ijk(:, 1) = [iks(i:i + 1) - 1, iks(i + 2)]           !          ___________
+                ijk(:, 2) = [iks(i), iks(i + 1) - 1, iks(i + 2)]     !          |         |
+                ijk(:, 3) = [iks(i) + 1, iks(i + 1) - 1, iks(i + 2)] !  - - -   | |     | |
+                ijk(:, 4) = [iks(i) - 1, iks(i + 1:i + 2)]           !  x o -   | |     | |
+                ijk(:, 5) = iks(i:i + 2)                             !  x x x   | |_____| |
+                ! U style, L style, 4 neighbors                      !          |_________|
 
                 thread_id = omp_get_thread_num()
                 self%threads_idxs(thread_id)%len = 0
 
                 nullify (values)
                 do j = 1, 4
-                    call grid(idx(j))%get_value(ijk(:, j), values)
+                    call grid(self%tbl%hash(ijk(:, j)))%get_value(ijk(:, j), values)
                     if (associated(values)) then
                         call self%threads_idxs(thread_id)%push_back_items(values, size(values))
                         nullify (values)
                     end if
                 end do
 
-                call grid(idx(5))%get_value(ijk(:, 5), values)
+                call grid(self%tbl%hash(ijk(:, 5)))%get_value(ijk(:, 5), values)
                 if (self%threads_idxs(thread_id)%len == 0) then
                     if (size(values) > 1) call self_grid_neighbors(values, &
                         &self%threads_pairs(thread_id))

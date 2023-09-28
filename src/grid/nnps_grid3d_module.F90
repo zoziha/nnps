@@ -69,7 +69,7 @@ contains
         real(rk), intent(in) :: radius  !! search radius
         integer, dimension(:), pointer, intent(out) :: pairs  !! particle pairs
         real(rk), dimension(:), pointer, intent(out) :: rdxs  !! particle pairs distance
-        integer :: i, j, idx(14), ik(3), ijk(3, 14), thread_id
+        integer :: i, j, ik(3), ijk(3, 14), thread_id
         integer, pointer :: values(:)
         real(rk) :: min(3)
         logical :: lstat
@@ -87,7 +87,7 @@ contains
         self%threads_pairs%len = 0
         associate (grid => self%tbl%buckets, iks => self%iks%items)
 
-            !$omp parallel do private(i, idx, ijk, values, thread_id) schedule(dynamic)
+            !$omp parallel do private(i, ijk, values, thread_id) schedule(dynamic)
             do i = 1, self%iks%len, 3
 
                 ijk(:, 1) = iks(i:i + 2) - 1  ! 3D L style, 13 neighbors (9 + 4)
@@ -105,21 +105,19 @@ contains
                 ijk(:, 13) = [iks(i) - 1, iks(i + 1:i + 2)]
                 ijk(:, 14) = iks(i:i + 2)
 
-                idx = [(self%tbl%hash(ijk(:, j)), j=1, 14)]
-
                 thread_id = omp_get_thread_num()
                 self%threads_idxs(thread_id)%len = 0
 
                 nullify (values)
                 do j = 1, 13
-                    call grid(idx(j))%get_value(ijk(:, j), values)
+                    call grid(self%tbl%hash(ijk(:, j)))%get_value(ijk(:, j), values)
                     if (associated(values)) then
                         call self%threads_idxs(thread_id)%push_back_items(values, size(values))
                         nullify (values)
                     end if
                 end do
 
-                call grid(idx(14))%get_value(ijk(:, 14), values)
+                call grid(self%tbl%hash(ijk(:, 14)))%get_value(ijk(:, 14), values)
                 if (self%threads_idxs(thread_id)%len == 0) then
                     if (size(values) > 1) call self_grid_neighbors(values, &
                         &self%threads_pairs(thread_id))
