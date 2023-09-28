@@ -15,9 +15,6 @@ module nnps_key_value
 
     !> key-value pairs
     type key_values
-#ifndef SERIAL
-        logical :: lock = .false.  !! lock
-#endif
         type(key_value), allocatable :: items(:)  !! key-value pair
     contains
         procedure :: push_back, get_value, zeroing, storage!, clear
