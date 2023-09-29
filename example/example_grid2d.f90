@@ -21,9 +21,9 @@ program example_grid2d
 end program example_grid2d
 !  *** grid find (2D)
 ! [vector: 4] pairs index:
-!  1, 4, 4, 3
+! 3, 4, 4, 1
 ! [matrix: 2*4] pairs coordinates:
-!  0.000E+00,  5.000E-01,  5.000E-01,  1.000E+00;
+!  1.000E+00,  5.000E-01,  5.000E-01,  0.000E+00;
 !  1.000E+00,  1.000E+00,  1.000E+00,  1.000E+00
 ! [vector: 6] rdxs:
-!  5.000E-01, -5.000E-01,  0.000E+00, ...  0.000E+00
+!  5.000E-01,  5.000E-01,  0.000E+00,  5.000E-01,  5.000E-01,  0.000E+00

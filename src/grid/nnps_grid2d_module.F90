@@ -61,9 +61,9 @@ contains
 
     !> initialize
     subroutine init(self, loc, n)
-        class(nnps_grid2d), intent(inout) :: self  !! nnps_grid2d
-        real(rk), dimension(:, :), intent(in), target :: loc  !! particle 2d coordinate
-        integer, intent(in) :: n  !! number of particles
+        class(nnps_grid2d), intent(inout) :: self               !! nnps_grid2d
+        real(rk), dimension(:, :), intent(in), target :: loc    !! particle 2d coordinate
+        integer, intent(in) :: n                                !! number of particles
 
         self%loc => loc
 

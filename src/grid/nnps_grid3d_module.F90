@@ -61,9 +61,9 @@ contains
 
     !> initialize
     subroutine init(self, loc, n)
-        class(nnps_grid3d), intent(inout) :: self  !! nnps_grid3d
-        real(rk), dimension(:, :), intent(in), target :: loc  !! particle 3d coordinate
-        integer, intent(in) :: n  !! number of particles
+        class(nnps_grid3d), intent(inout) :: self               !! nnps_grid3d
+        real(rk), dimension(:, :), intent(in), target :: loc    !! particle 3d coordinate
+        integer, intent(in) :: n                                !! number of particles
 
         self%loc => loc
 
@@ -81,12 +81,12 @@ contains
 
     !> query
     subroutine query(self, radius, pairs, rdxs, n)
-        class(nnps_grid3d), intent(inout), target :: self  !! nnps_grid3d
-        integer, intent(in) :: n  !! number of pairs
-        real(rk), intent(in) :: radius  !! search radius
-        integer, dimension(:), pointer, intent(out) :: pairs  !! particle pairs
-        real(rk), dimension(:), pointer, intent(out) :: rdxs  !! particle pairs distance
-        integer :: i, j, ik(3), pos(5), ijk(3, 13), istat
+        class(nnps_grid3d), intent(inout), target :: self       !! nnps_grid3d
+        integer, intent(in) :: n                                !! number of pairs
+        real(rk), intent(in) :: radius                          !! search radius
+        integer, dimension(:), pointer, intent(out) :: pairs    !! particle pairs
+        real(rk), dimension(:), pointer, intent(out) :: rdxs    !! particle pairs distance
+        integer :: i, j, ik(3), ijk(3, 13), istat
         integer, pointer :: values(:)
 
 #ifndef SERIAL

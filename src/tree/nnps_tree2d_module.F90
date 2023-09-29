@@ -5,7 +5,9 @@ module nnps_tree2d_module
     use nnps_vector, only: vector
     use nnps_tree2d_quadtree, only: quadtree
     use nnps_tree2d_shape, only: circle
+#ifndef SERIAL
     use omp_lib, only: omp_get_thread_num, omp_get_max_threads
+#endif
     implicit none
 
     private
@@ -15,7 +17,6 @@ module nnps_tree2d_module
     type nnps_quadtree
         real(rk), pointer :: loc(:, :)  !! particle 2d coordinate
         type(vector), allocatable, private :: threads_pairs(:)  !! thread local pairs
-        type(vector) :: pairs  !! partcile pairs
         type(quadtree) :: tree  !! data tree
     contains
         procedure :: init, build, query
@@ -32,8 +33,13 @@ contains
         integer, intent(in), optional :: cap
 
         self%loc => loc
+
+#ifndef SERIAL
         allocate (self%threads_pairs(0:omp_get_max_threads() - 1))
-        call self%pairs%init(2, cap)
+#else
+        allocate (self%threads_pairs(0:0))
+#endif
+
         call self%threads_pairs(:)%init(2, cap)
         call self%tree%init(min(1), max(1), max(2), min(2))
 
@@ -68,11 +74,20 @@ contains
 
         !$omp parallel do private(i) schedule(dynamic)
         do i = 1, size(self%loc, 2)
+
+#ifndef SERIAL
             call self%tree%query(self%loc, circle(self%loc(:, i), radius), i, &
                                  self%threads_pairs(omp_get_thread_num()))
+#else
+            call self%tree%query(self%loc, circle(self%loc(:, i), radius), i, &
+                                 self%threads_pairs(0))
+#endif
+
         end do
 
+#ifndef SERIAL
         if (size(self%threads_pairs) > 1) call self%threads_pairs(0)%merge(self%threads_pairs)
+#endif
 
         pairs => self%threads_pairs(0)%items(1:self%threads_pairs(0)%len*2)
         rdxs => self%threads_pairs(0)%ritems(1:self%threads_pairs(0)%len*3)

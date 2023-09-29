@@ -4,7 +4,9 @@ module nnps_direct2d_module
     use nnps_kinds, only: rk
     use nnps_vector, only: vector
     use nnps_math, only: distance2d
+#ifndef SERIAL
     use omp_lib, only: omp_get_thread_num, omp_get_max_threads
+#endif
     implicit none
 
     private
@@ -14,7 +16,6 @@ module nnps_direct2d_module
     type nnps_direct2d
         real(rk), pointer :: loc(:, :)  !! particle 2d coordinate
         type(vector), allocatable, private :: threads_pairs(:)  !! thread local pairs
-        type(vector) :: pairs  !! partcile pairs
     contains
         procedure :: init, query
     end type nnps_direct2d
@@ -28,8 +29,11 @@ contains
         integer, intent(in), optional :: cap
 
         self%loc => loc
+#ifndef SERIAL
         allocate (self%threads_pairs(0:omp_get_max_threads() - 1))
-        call self%pairs%init(2, cap)
+#else
+        allocate (self%threads_pairs(0:0))
+#endif
         call self%threads_pairs(:)%init(2, cap)
 
     end subroutine init
@@ -50,12 +54,18 @@ contains
             do j = i + 1, size(self%loc, 2)
 
                 call distance2d(self%loc(:, i), self%loc(:, j), rdx(1), rdx(2:3))
+#ifndef SERIAL
                 if (rdx(1) < radius) call self%threads_pairs(omp_get_thread_num())%push([i, j], rdx)
+#else
+                if (rdx(1) < radius) call self%threads_pairs(0)%push([i, j], rdx)
+#endif
 
             end do
         end do
 
+#ifndef SERIAL
         if (size(self%threads_pairs) > 1) call self%threads_pairs(0)%merge(self%threads_pairs)
+#endif
 
         pairs => self%threads_pairs(0)%items(1:self%threads_pairs(0)%len*2)
         rdxs => self%threads_pairs(0)%ritems(1:self%threads_pairs(0)%len*3)
