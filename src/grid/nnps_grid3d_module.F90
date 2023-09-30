@@ -107,7 +107,7 @@ contains
         self%threads_pairs%len = 0
         associate (grid => self%tbl%buckets, iks => self%iks%items)
 
-            !$omp parallel do private(i, ijk, values, thread_id)
+            !$omp parallel do private(i, ijk, values, thread_id) schedule(dynamic)
             do i = 1, self%iks%len, 3
 
                 ijk(:, 1) = iks(i:i + 2) - 1  ! 3D L style, 13 neighbors (9 + 4)

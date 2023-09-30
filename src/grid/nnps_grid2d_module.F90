@@ -108,7 +108,7 @@ contains
         self%threads_pairs%len = 0
         associate (grid => self%tbl%buckets, iks => self%iks%items)
 
-            !$omp parallel do private(i, ijk, values, thread_id)
+            !$omp parallel do private(i, ijk, values, thread_id) schedule(dynamic)
             do i = 1, self%iks%len, 3
 
                 ijk(:, 1) = [iks(i:i + 1) - 1, iks(i + 2)]           !          ___________
