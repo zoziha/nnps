@@ -12,6 +12,7 @@ project_website: https://gitee.com/zoziha/nnps
 display: public
          private
 source: true
+md_extensions: markdown.extensions.toc
 ---
 
 ![Language](https://img.shields.io/badge/-Fortran-734f96?logo=fortran&logoColor=white)

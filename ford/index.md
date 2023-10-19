@@ -2,31 +2,43 @@
 title: User Guide
 ---
 
-This repository contains the source code for nearest neighbor particle search using the methods as below:
+[TOC]
 
-* direct search (\\(O(n^2/2)\\));
-* kd-tree search (\\(O(nlogn)\\));
-* grid search (\\(O(n)\\)).
+# 用户指南
 
-For optimization purposes: Since distance solving will be involved in NNPS,
-and distance solving is needed in other solving processes in CFD particle method,
-in order to reduce the amount of computation,the distances obtained from solving will be stored
-in the data structure of this warehouse in order to improve the efficiency as much as possible.
-The distances stored are the line distance and the axis component of the line distance.
+该资源库包含使用以下方法进行近邻粒子搜索的源代码：
 
-* `pairs`: `[i, j]`;
-* `rdxs`: `[r, dx(dim)], dx = xi - xj`;
+* 直接搜索 \(O(n^2/2)\)；
+* kD数型搜索 \(O(nlogn)\)；
+* 背景网格搜索 \(O(n)\)。
 
-For 2D/3D NNPS, OpenMP is used for parallel acceleration, and parallel threads can be set through the `OMP_NUM_THREADS` environment variable. The idea of OpenMP acceleration is that each thread maintains a list of particle pairs `threads_pairs`, and after the parallel search for particle pairs is completed, they are merged uniformly.
+用于优化目的：由于在 NNPS 中会涉及到距离求解、
+而在 CFD 粒子法的其他求解过程中也需要距离求解、
+为了减少计算量，求解得到的距离将存储在这个仓库的数据结构中。
+为了减少计算量，求解得到的距离将存储在本仓库的数据结构中，以尽可能提高效率。
+存储的距离包括线距和线距的轴分量。
+
+* `pairs`: `[i, j]`；
+* `rdxs`: `[r, dx(dim)], dx = xi - xj`。
 
 @note
-The direct search method is relatively simple because it does not require the construction of data structures;
-the tree search method may take a larger total time because of the large amount of computation for single-particle searches;
-and the background grid method has a low time complexity and a relatively small amount of computation if the background grid is reused.
+直接搜索法相对简单，因为它不需要构建数据结构；
+树搜索法由于单粒子搜索的计算量较大，因此总耗时可能较长；
+而背景网格法的时间复杂度较低，而且如果重复使用背景网格，计算量也相对较小。
 
-In order to improve cache read and write, spatial hash with Z-sort or other graphs sort to get compact hash,
-this repository does not consider it for this time being.
+为了改善缓存读写，空间哈希与 Z 排序或其他图排序相结合，以获得紧凑的哈希值、
+本资源库暂不考虑。
 
-## Link
+## 并行加速
 
-- [SPH tutorial](https://sph-tutorial.physics-simulation.org/).
+`NNPS` 支持 OpenMP 并行加速，任务有：
+
+* [ ] NNPS 构建；
+* [x] NNPS 搜索。
+
+对于 2D/3D NNPS，OpenMP 用于并行加速，并行线程可通过 `OMP_NUM_THREADS` 环境变量设置。
+OpenMP 加速的原理是每个线程维护一个粒子对列表 `threads_pairs`，在粒子对的并行搜索完成后，将它们统一合并。
+
+## 链接
+
+- [SPH教程](https://sph-tutorial.physics-simulation.org/)。
