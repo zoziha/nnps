@@ -18,7 +18,7 @@ NNPS 方案在 CFD 粒子法中的实践。
 
 要在`fpm`项目中使用`nnps`，请在`fpm.toml`文件中添加以下几行：
 
-```toml
+```sh
 [dependencies］
 nnps = { git = "https://gitee.com/zoziha/nnps" }
 ```

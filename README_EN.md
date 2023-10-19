@@ -18,7 +18,7 @@ and `ifort/ifx` and `gfortran` compilers are tested.
 
 To use `nnps` within your `fpm` project, add the following lines to your `fpm.toml` file:
 
-```toml
+```sh
 [dependencies]
 nnps = { git="https://github.com/zoziha/nnps" }
 ```

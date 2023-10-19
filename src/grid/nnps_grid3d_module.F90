@@ -22,7 +22,6 @@ module nnps_grid3d_module
         type(int_vector), private :: iks                            !! unique keys
 
 #ifndef SERIAL
-        type(int_vector), private :: remains(2)                     !! remains indexes
         type(vector), allocatable, private :: threads_pairs(:)      !! thread local pairs
         type(int_vector), allocatable, private :: threads_idxs(:)   !! thread local indexes
 #else

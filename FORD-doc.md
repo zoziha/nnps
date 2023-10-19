@@ -4,10 +4,13 @@ summary: 🚥 Nearest Neighbor Particle Search
 preprocess: false
 page_dir: ford
 output_dir: _build/ford
-author: ZUO Zhihua
+author: 左志华
+author_description: 哈尔滨工程大学-船舶与海洋结构物设计制造，博士研究生
 email: zuo.zhihua@qq.com
 website: https://gitee.com/zoziha
 project_website: https://gitee.com/zoziha/nnps
+display: public
+         private
 source: true
 ---
 
