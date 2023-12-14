@@ -1,7 +1,7 @@
 !> 1D binary tree search
 module nnps_tree1d_module
 
-    use nnps_kinds, only: rk
+    use nnps_kinds, only: wp
     use nnps_vector, only: vector
     use nnps_tree1d_binarytree, only: binarytree
     use nnps_tree1d_shape, only: line
@@ -12,7 +12,7 @@ module nnps_tree1d_module
 
     !> binary tree
     type nnps_binarytree
-        real(rk), pointer :: loc(:)  !! particle 1d coordinate
+        real(wp), pointer :: loc(:)  !! particle 1d coordinate
         type(vector) :: pairs  !! partcile pairs
         type(binarytree) :: tree  !! data tree
     contains
@@ -25,8 +25,8 @@ contains
     !> initialize
     subroutine init(self, loc, min, max, cap)
         class(nnps_binarytree), intent(inout) :: self
-        real(rk), dimension(:), intent(in), target :: loc
-        real(rk), intent(in) :: min, max
+        real(wp), dimension(:), intent(in), target :: loc
+        real(wp), intent(in) :: min, max
         integer, intent(in), optional :: cap
 
         self%loc => loc
@@ -55,9 +55,9 @@ contains
     !> query
     subroutine query(self, radius, pairs, rdxs)
         class(nnps_binarytree), intent(inout), target :: self
-        real(rk), intent(in) :: radius
+        real(wp), intent(in) :: radius
         integer, dimension(:), pointer, intent(out) :: pairs
-        real(rk), dimension(:), pointer, intent(out) :: rdxs
+        real(wp), dimension(:), pointer, intent(out) :: rdxs
         integer :: i
 
         self%pairs%len = 0

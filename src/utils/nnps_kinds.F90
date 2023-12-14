@@ -1,15 +1,14 @@
+!> 浮点型工作精度
 !> Float point kind
 module nnps_kinds
 
     implicit none
 
-    private
-    public :: rk
-
+    !> 工作精度, 默认为单精度, working precision, default is single precision
 #ifdef REAL64
-    integer, parameter :: rk = kind(0.0d0)
+    integer, parameter :: wp = kind(0.0d0)
 #else
-    integer, parameter :: rk = kind(0.0)
+    integer, parameter :: wp = kind(0.0)
 #endif
 
 end module nnps_kinds

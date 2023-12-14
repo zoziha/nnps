@@ -1,7 +1,7 @@
 !> 1D background grid method
 module nnps_grid1d_module
 
-    use nnps_kinds, only: rk
+    use nnps_kinds, only: wp
     use nnps_vector, only: vector
     use nnps_int_vector, only: int_vector
     use nnps_math, only: distance1d, sqrt_eps
@@ -12,10 +12,10 @@ module nnps_grid1d_module
 
     !> 1D grid
     type nnps_grid1d
-        real(rk), pointer :: loc(:)  !! particle 1d coordinate
+        real(wp), pointer :: loc(:)  !! particle 1d coordinate
         type(int_vector), allocatable :: grids(:)  !! background grids
         type(vector) :: pairs  !! particle pairs
-        real(rk), private :: min, max, radius
+        real(wp), private :: min, max, radius
     contains
         procedure :: init, build, query
         procedure, private :: check
@@ -26,8 +26,8 @@ contains
     !> initialize
     subroutine init(self, loc, min, max, radius, cap)
         class(nnps_grid1d), intent(inout) :: self
-        real(rk), dimension(:), intent(in), target :: loc
-        real(rk), intent(in) :: min, max, radius
+        real(wp), dimension(:), intent(in), target :: loc
+        real(wp), intent(in) :: min, max, radius
         integer, intent(in), optional :: cap
 
         self%loc => loc
@@ -61,11 +61,11 @@ contains
     !> query
     pure subroutine query(self, radius, pairs, rdxs)
         class(nnps_grid1d), intent(inout), target :: self
-        real(rk), intent(in) :: radius
+        real(wp), intent(in) :: radius
         integer, dimension(:), pointer, intent(out) :: pairs
-        real(rk), pointer, dimension(:), intent(out) :: rdxs
+        real(wp), pointer, dimension(:), intent(out) :: rdxs
         integer :: i, j, k
-        real(rk) :: rdx(2)
+        real(wp) :: rdx(2)
 
         self%pairs%len = 0
 

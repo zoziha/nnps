@@ -1,7 +1,7 @@
 !> 2D background grid method
 module nnps_grid2d_module
 
-    use nnps_kinds, only: rk
+    use nnps_kinds, only: wp
     use nnps_vector, only: vector, vector_finalizer
     use nnps_int_vector, only: int_vector, int_vector_finalizer
     use nnps_spatial_hashing, only: shash_tbl, shash_tbl_finalizer
@@ -17,7 +17,7 @@ module nnps_grid2d_module
     !> 2d grid
     !> @note pairs(threads_pairs)/shash_tbl are the No.1/No.2 memory consumers
     type nnps_grid2d
-        real(rk), pointer :: loc(:, :)                              !! particle 2d coordinate
+        real(wp), pointer :: loc(:, :)                              !! particle 2d coordinate
         type(shash_tbl) :: tbl                                      !! background grids hash table
         type(int_vector), private :: iks                            !! unique keys
 
@@ -61,7 +61,7 @@ contains
     !> initialize
     subroutine init(self, loc, n)
         class(nnps_grid2d), intent(inout) :: self               !! nnps_grid2d
-        real(rk), dimension(:, :), intent(in), target :: loc    !! particle 2d coordinate
+        real(wp), dimension(:, :), intent(in), target :: loc    !! particle 2d coordinate
         integer, intent(in) :: n                                !! number of particles
 
         self%loc => loc
@@ -82,9 +82,9 @@ contains
     subroutine query(self, radius, pairs, rdxs, n)
         class(nnps_grid2d), intent(inout), target :: self       !! nnps_grid2d
         integer, intent(in) :: n                                !! number of particles
-        real(rk), intent(in) :: radius                          !! grid length, smoothing length
+        real(wp), intent(in) :: radius                          !! grid length, smoothing length
         integer, dimension(:), pointer, intent(out) :: pairs    !! particle pairs
-        real(rk), pointer, dimension(:), intent(out) :: rdxs    !! particle pairs distance
+        real(wp), pointer, dimension(:), intent(out) :: rdxs    !! particle pairs distance
         integer :: i, j, ik(3), ijk(3, 4), istat
         integer, pointer :: values(:)
 
@@ -193,7 +193,7 @@ contains
             integer, intent(in) :: found(:)
             type(vector), intent(inout) :: pairs
             integer :: ii, jj
-            real(rk) :: rdx(3)
+            real(wp) :: rdx(3)
 
             do ii = 1, size(main)
 
@@ -217,7 +217,7 @@ contains
             integer, intent(in) :: main(:)
             type(vector), intent(inout) :: pairs
             integer :: ii, jj
-            real(rk) :: rdx(3)
+            real(wp) :: rdx(3)
 
             do ii = 1, size(main)
 

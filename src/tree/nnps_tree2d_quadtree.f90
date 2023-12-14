@@ -1,7 +1,7 @@
 !> quadrature tree
 module nnps_tree2d_quadtree
 
-    use nnps_kinds, only: rk
+    use nnps_kinds, only: wp
     use nnps_tree2d_shape, only: circle, rectangle
     use nnps_vector, only: vector
     use nnps_int_vector, only: int_vector, int_vector_finalizer
@@ -40,7 +40,7 @@ contains
     !> initialize
     subroutine init(self, left, right, top, bottom)
         class(quadtree), intent(inout) :: self
-        real(rk), intent(in) :: left, right, top, bottom
+        real(wp), intent(in) :: left, right, top, bottom
 
         self%boundary = rectangle(left, right, top, bottom)
 
@@ -49,7 +49,7 @@ contains
     !> add point
     recursive subroutine add(self, x, i, done)
         class(quadtree), intent(inout) :: self
-        real(rk), intent(in) :: x(2)
+        real(wp), intent(in) :: x(2)
         integer, intent(in) :: i
         logical, intent(out) :: done
         integer :: j
@@ -87,12 +87,12 @@ contains
     !> query
     recursive pure subroutine query(self, loc, range, i, threads_pairs)
         class(quadtree), intent(in) :: self
-        real(rk), intent(in) :: loc(:, :)
+        real(wp), intent(in) :: loc(:, :)
         type(circle), intent(in) :: range
         integer, intent(in) :: i
         type(vector), intent(inout) :: threads_pairs
         integer :: j
-        real(rk) :: rdx(3)
+        real(wp) :: rdx(3)
 
         if (.not. range%intersect(self%boundary)) return
 

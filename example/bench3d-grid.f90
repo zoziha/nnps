@@ -2,28 +2,28 @@
 program main
 
     use random_module, only: randn, randu
-    use nnps_module, only: rk, nnps_direct3d, nnps_octree, nnps_grid3d
+    use nnps_module, only: wp, nnps_direct3d, nnps_octree, nnps_grid3d
     use timer_module, only: timer, sec2hms
     use display_module, only: display
     implicit none
-    real(rk), dimension(:, :), allocatable :: loc
+    real(wp), dimension(:, :), allocatable :: loc
     integer :: m, loop, i
     type(timer) :: tmr
     type(nnps_grid3d) :: nnps_grid
     integer, pointer :: pairs(:)
-    real(rk), pointer :: rdxs(:)
-    real(rk) :: t1, t2
+    real(wp), pointer :: rdxs(:)
+    real(wp) :: t1, t2
 
     m = 130000
     loop = 100
     allocate (loc(3, m))
-    call randu(loc, -20.0_rk, 20.0_rk)
+    call randu(loc, -20.0_wp, 20.0_wp)
     call nnps_grid%init(loc, m)
 
     call cpu_time(t1)
     call tmr%tic()
     do i = 1, loop
-        call nnps_grid%query(1.0_rk, pairs, rdxs, m)
+        call nnps_grid%query(1.0_wp, pairs, rdxs, m)
     end do
 
     print *, "*** grid3d ***"

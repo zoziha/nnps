@@ -1,7 +1,7 @@
 !> 2D quadrature tree search
 module nnps_tree2d_module
 
-    use nnps_kinds, only: rk
+    use nnps_kinds, only: wp
     use nnps_vector, only: vector
     use nnps_tree2d_quadtree, only: quadtree
     use nnps_tree2d_shape, only: circle
@@ -15,7 +15,7 @@ module nnps_tree2d_module
 
     !> quadrature tree
     type nnps_quadtree
-        real(rk), pointer :: loc(:, :)  !! particle 2d coordinate
+        real(wp), pointer :: loc(:, :)  !! particle 2d coordinate
         type(vector), allocatable, private :: threads_pairs(:)  !! thread local pairs
         type(quadtree) :: tree  !! data tree
     contains
@@ -28,8 +28,8 @@ contains
     !> initialize
     subroutine init(self, loc, min, max, cap)
         class(nnps_quadtree), intent(inout) :: self
-        real(rk), dimension(:, :), intent(in), target :: loc
-        real(rk), intent(in), dimension(2) :: min, max
+        real(wp), dimension(:, :), intent(in), target :: loc
+        real(wp), intent(in), dimension(2) :: min, max
         integer, intent(in), optional :: cap
 
         self%loc => loc
@@ -65,9 +65,9 @@ contains
     !> query
     subroutine query(self, radius, pairs, rdxs)
         class(nnps_quadtree), intent(inout), target :: self
-        real(rk), intent(in) :: radius
+        real(wp), intent(in) :: radius
         integer, dimension(:), pointer, intent(out) :: pairs
-        real(rk), dimension(:), pointer, intent(out) :: rdxs
+        real(wp), dimension(:), pointer, intent(out) :: rdxs
         integer :: i
 
         self%threads_pairs%len = 0

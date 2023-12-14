@@ -1,16 +1,17 @@
 program example_direct1d
 
-    use nnps_module, only: nnps_direct1d, rk
+    use nnps_module, only: nnps_direct1d, wp
     use display_module, only: display
     implicit none
 
     type(nnps_direct1d) :: nnps
-    real(rk), dimension(4) :: loc = [0.0_rk, 1.0_rk, 2.0_rk, 1.5_rk]
+    integer, parameter :: n = 4                            !! 粒子数
+    real(wp), dimension(n) :: loc = [0.0_wp, 1.0_wp, 2.0_wp, 1.5_wp]
     integer, pointer :: pairs(:)
-    real(rk), pointer :: rdxs(:)
+    real(wp), pointer :: rdxs(:)
 
-    call nnps%init(loc)
-    call nnps%query(0.6_rk, pairs, rdxs)
+    call nnps%init(loc, m=[8, 100], n=n)
+    call nnps%query(0.6_wp, pairs, rdxs, n=n)
 
     print *, '*** direct find (1D)'
     call display(pairs, 'pairs index:')

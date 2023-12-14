@@ -1,7 +1,7 @@
 !> nnps octave tree shape
 module nnps_tree3d_shape
 
-    use nnps_kinds, only: rk
+    use nnps_kinds, only: wp
     implicit none
 
     private
@@ -9,14 +9,14 @@ module nnps_tree3d_shape
 
     !> cuboid shape
     type cuboid
-        real(rk) :: left, right, top, bottom, front, back  !! left, right, top and bottom coordinate
+        real(wp) :: left, right, top, bottom, front, back  !! left, right, top and bottom coordinate
     contains
         procedure :: contain => cuboid_contain
     end type cuboid
 
     !> sphere shape
     type sphere
-        real(rk) :: center(3), radius  !! center and radius
+        real(wp) :: center(3), radius  !! center and radius
     contains
         procedure :: intersect => sphere_intersect
     end type sphere
@@ -26,7 +26,7 @@ contains
     !> judgy contain
     pure logical function cuboid_contain(self, x)
         class(cuboid), intent(in) :: self
-        real(rk), intent(in) :: x(3)
+        real(wp), intent(in) :: x(3)
 
         cuboid_contain = x(1) >= self%left .and. x(1) <= self%right .and. &
                          x(2) >= self%bottom .and. x(2) <= self%top .and. &

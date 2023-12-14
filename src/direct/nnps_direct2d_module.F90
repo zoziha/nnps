@@ -1,9 +1,11 @@
+!> 2维直接搜索
 !> 2D direct neighbor search
 module nnps_direct2d_module
 
-    use nnps_kinds, only: rk
+    use nnps_kinds, only: wp
     use nnps_vector, only: vector
     use nnps_math, only: distance2d
+    use, intrinsic :: iso_fortran_env, only: error_unit
 #ifndef SERIAL
     use omp_lib, only: omp_get_thread_num, omp_get_max_threads
 #endif
@@ -12,52 +14,60 @@ module nnps_direct2d_module
     private
     public :: nnps_direct2d
 
+    !> 二维直接搜索类型
     !> nnps_direct2d
     type nnps_direct2d
-        real(rk), pointer :: loc(:, :)  !! particle 2d coordinate
+        real(wp), pointer :: loc(:, :)                          !! particle 2d coordinate
         type(vector), allocatable, private :: threads_pairs(:)  !! thread local pairs
+        integer :: m(2)                                         !! 粒子的平均粒子对数量区间
     contains
         procedure :: init, query
     end type nnps_direct2d
 
 contains
 
+    !> 初始化二维直接搜索
     !> initialize
-    subroutine init(self, loc, cap)
+    subroutine init(self, loc, m, n)
         class(nnps_direct2d), intent(inout), target :: self
-        real(rk), intent(in), target :: loc(:, :)
-        integer, intent(in), optional :: cap
+        real(wp), intent(in), target :: loc(:, :)               !! 粒子坐标 (地址)
+        integer, intent(in) :: m(2)                             !! 粒子的平均粒子对数量区间
+        integer, intent(in) :: n                                !! 粒子数量, n = size(loc, 2)
+        integer :: thread_num
 
         self%loc => loc
-#ifndef SERIAL
-        allocate (self%threads_pairs(0:omp_get_max_threads() - 1))
+        self%m = m
+#ifdef SERIAL
+        thread_num = 0
 #else
-        allocate (self%threads_pairs(0:0))
+        thread_num = omp_get_max_threads() - 1
 #endif
-        call self%threads_pairs(:)%init(2, cap)
+        allocate (self%threads_pairs(0:thread_num))
+        call self%threads_pairs(:)%init(2, m(1)/(thread_num + 1))
 
     end subroutine init
 
+    !> 查询粒子对
     !> query
-    subroutine query(self, radius, pairs, rdxs)
+    subroutine query(self, radius, pairs, rdxs, n)
         class(nnps_direct2d), intent(inout), target :: self
-        real(rk), intent(in) :: radius  !! query radius
-        integer, pointer :: pairs(:)  !! particle pairs
-        real(rk), dimension(:), pointer :: rdxs
+        real(wp), intent(in) :: radius                      !! query radius
+        integer, pointer :: pairs(:)                        !! particle pairs
+        integer, intent(in) :: n                            !! 粒子数量
+        real(wp), dimension(:), pointer :: rdxs             !! particle pair distance, r, dx(2)
         integer :: i, j
-        real(rk) :: rdx(3)
+        real(wp) :: rdx(3)
 
-        self%threads_pairs%len = 0
-
+        self%threads_pairs(:)%len = 0
         !$omp parallel do private(i, j, rdx) schedule(dynamic)
-        do i = 1, size(self%loc, 2) - 1
-            do j = i + 1, size(self%loc, 2)
+        do i = 1, n - 1
+            do j = i + 1, n
 
                 call distance2d(self%loc(:, i), self%loc(:, j), rdx(1), rdx(2:3))
-#ifndef SERIAL
-                if (rdx(1) < radius) call self%threads_pairs(omp_get_thread_num())%push([i, j], rdx)
-#else
+#ifdef SERIAL
                 if (rdx(1) < radius) call self%threads_pairs(0)%push([i, j], rdx)
+#else
+                if (rdx(1) < radius) call self%threads_pairs(omp_get_thread_num())%push([i, j], rdx)
 #endif
 
             end do
@@ -67,8 +77,17 @@ contains
         if (size(self%threads_pairs) > 1) call self%threads_pairs(0)%merge(self%threads_pairs)
 #endif
 
-        pairs => self%threads_pairs(0)%items(1:self%threads_pairs(0)%len*2)
-        rdxs => self%threads_pairs(0)%ritems(1:self%threads_pairs(0)%len*3)
+        associate (len => self%threads_pairs(0)%len)
+
+            if (len*2 > self%m(2)) then
+                write (error_unit, "(a)") "INFO: particle pairs exceed the maximum number"
+                stop 99
+            end if
+
+            pairs => self%threads_pairs(0)%items(1:len*2)
+            rdxs => self%threads_pairs(0)%ritems(1:len*3)
+
+        end associate
 
     end subroutine query
 

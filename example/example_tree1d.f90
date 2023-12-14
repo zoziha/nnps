@@ -2,18 +2,18 @@
 ! unfortunately, I can't register gcc-bugzilla account very well.
 program example_tree1d
 
-    use nnps_module, only: nnps_binarytree, rk
+    use nnps_module, only: nnps_binarytree, wp
     use display_module, only: display
     implicit none
 
     type(nnps_binarytree) :: nnps
-    real(rk), dimension(4) :: loc = [0.0_rk, 1.0_rk, 2.0_rk, 1.5_rk]
+    real(wp), dimension(4) :: loc = [0.0_wp, 1.0_wp, 2.0_wp, 1.5_wp]
     integer, pointer :: pairs(:)
-    real(rk), pointer :: rdxs(:)
+    real(wp), pointer :: rdxs(:)
 
     call nnps%init(loc, minval(loc), maxval(loc))
     call nnps%build()
-    call nnps%query(0.6_rk, pairs, rdxs)
+    call nnps%query(0.6_wp, pairs, rdxs)
 
     print *, '*** kd-tree find (1D)'
     call display(pairs, 'pairs index:')

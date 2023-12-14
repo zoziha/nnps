@@ -10,6 +10,11 @@ NNPS 方案在 CFD 粒子法中的实践。
 
 </div>
 
+设计思想：
+1. 面向对象;
+2. 简单易用;
+3. 高效灵活。
+
 ## 使用方法
 
 仅支持 [FPM]((https://github.com/fortran-lang/fpm))/Meson/Visual-Studio、
@@ -42,18 +47,18 @@ fpm run --example --all # 运行所有示例
 ```fortran
 program example_grid2d
 
-    use nnps_module, only: nnps_grid2d, rk
+    use nnps_module, only: nnps_grid2d, wp
     use display_module, only: display
     implicit none
 
     type(nnps_grid2d) :: nnps
-    real(rk), dimension(2, 4) :: loc = reshape([0.0_rk, 1.0_rk, 2.0_rk, 1.5_rk, &
-                                                1.0_rk, 1.0_rk, 0.5_rk, 1.0_rk], [2, 4])
+    real(wp), dimension(2, 4) :: loc = reshape([0.0_wp, 1.0_wp, 2.0_wp, 1.5_wp, &
+                                                1.0_wp, 1.0_wp, 0.5_wp, 1.0_wp], [2, 4])
     integer, pointer :: pairs(:)
-    real(rk), pointer :: rdxs(:)
+    real(wp), pointer :: rdxs(:)
 
     call nnps%init(loc, n=4)
-    call nnps%query(0.6_rk, pairs, rdxs, n=4)
+    call nnps%query(0.6_wp, pairs, rdxs, n=4)
 
     print *, '*** grid find (2D)'
     call display(pairs, 'pairs index:', brief=.false.)

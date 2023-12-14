@@ -1,7 +1,7 @@
 !> binary tree
 module nnps_tree1d_binarytree
 
-    use nnps_kinds, only: rk
+    use nnps_kinds, only: wp
     use nnps_tree1d_shape, only: line
     use nnps_vector, only: vector
     use nnps_int_vector, only: int_vector
@@ -24,7 +24,7 @@ contains
     !> initialize
     subroutine init(self, left, right)
         class(binarytree), intent(inout) :: self
-        real(rk), intent(in) :: left, right
+        real(wp), intent(in) :: left, right
 
         self%boundary = line(left, right)
 
@@ -33,7 +33,7 @@ contains
     !> add point
     recursive subroutine add(self, x, i, done)
         class(binarytree), intent(inout) :: self
-        real(rk), intent(in) :: x
+        real(wp), intent(in) :: x
         integer, intent(in) :: i
         logical, intent(out) :: done
         integer :: j
@@ -68,12 +68,12 @@ contains
     !> query
     recursive subroutine query(self, loc, range, i, pairs)
         class(binarytree), intent(in) :: self
-        real(rk), intent(in) :: loc(:)
+        real(wp), intent(in) :: loc(:)
         type(line), intent(in) :: range
         integer, intent(in) :: i
         type(vector), intent(inout) :: pairs
         integer :: j
-        real(rk) :: rdx(2)
+        real(wp) :: rdx(2)
 
         if (.not. range%intersect(self%boundary)) return
 

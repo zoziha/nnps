@@ -1,19 +1,20 @@
 !> Vector data vector
 module nnps_vector
 
-    use nnps_kinds, only: rk
+    use nnps_kinds, only: wp
     implicit none
 
     private
     public :: vector, vector_finalizer
 
+    !> 可变长度向量容器
     !> Vector data vector
     type vector
-        integer :: len = 0  !! 有效向量长度
-        integer, private :: cap = 0  !! 向量容量
-        integer, private :: dim  !! 物理场维度
-        integer, allocatable :: items(:)  !! 整型数组
-        real(rk), allocatable :: ritems(:)  !! 实型数组
+        integer :: len = 0                  !! 有效向量长度
+        integer, private :: cap = 0         !! 向量容量
+        integer, private :: dim             !! 物理场维度
+        integer, allocatable :: items(:)    !! 整型数组
+        real(wp), allocatable :: ritems(:)  !! 实型数组
     contains
         procedure :: init
         procedure :: push, merge, storage
@@ -45,7 +46,7 @@ contains
     pure subroutine extend(self)
         class(vector), intent(inout) :: self
         integer, allocatable :: tmp(:)
-        real(rk), allocatable :: rtmp(:)
+        real(wp), allocatable :: rtmp(:)
 
         self%cap = 2*self%cap
         allocate (tmp(size(self%items)), rtmp(size(self%ritems)))
@@ -58,7 +59,7 @@ contains
     pure subroutine push(self, items, ritems)
         class(vector), intent(inout) :: self
         integer, intent(in) :: items(2)
-        real(rk), intent(in) :: ritems(:)
+        real(wp), intent(in) :: ritems(:)
 
         if (self%len == self%cap) call self%extend()
         self%len = self%len + 1

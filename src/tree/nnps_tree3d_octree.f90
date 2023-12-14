@@ -1,7 +1,7 @@
 !> octave tree
 module nnps_tree3d_octree
 
-    use nnps_kinds, only: rk
+    use nnps_kinds, only: wp
     use nnps_tree3d_shape, only: sphere, cuboid
     use nnps_vector, only: vector
     use nnps_int_vector, only: int_vector
@@ -25,7 +25,7 @@ contains
     !> initialize
     subroutine init(self, left, right, top, bottom, front, back)
         class(octree), intent(inout) :: self
-        real(rk), intent(in) :: left, right, top, bottom, front, back
+        real(wp), intent(in) :: left, right, top, bottom, front, back
 
         self%boundary = cuboid(left, right, top, bottom, front, back)
 
@@ -34,7 +34,7 @@ contains
     !> add point
     recursive subroutine add(self, x, i, done)
         class(octree), intent(inout) :: self
-        real(rk), intent(in) :: x(3)
+        real(wp), intent(in) :: x(3)
         integer, intent(in) :: i
         logical, intent(out) :: done
         integer :: j
@@ -77,12 +77,12 @@ contains
     !> query
     recursive pure subroutine query(self, loc, range, i, threads_pairs)
         class(octree), intent(in) :: self
-        real(rk), intent(in) :: loc(:, :)
+        real(wp), intent(in) :: loc(:, :)
         type(sphere), intent(in) :: range
         integer, intent(in) :: i
         type(vector), intent(inout) :: threads_pairs
         integer :: j
-        real(rk) :: rdx(4)
+        real(wp) :: rdx(4)
 
         if (.not. range%intersect(self%boundary)) return
 
