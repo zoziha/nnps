@@ -13,18 +13,4 @@ project (
 
 subdir('src')
 subdir('example')
-
-nnps_lic = files('LICENSE')
-install_data(
-    nnps_lic,
-    install_dir: join_paths(get_option('prefix'), 'share', 'licenses', meson.project_name()),
-)
-
-pkg = import('pkgconfig')
-pkg.generate(
-    name : meson.project_name(),
-    description : 'NNPS scheme practice in CFD particle method.',
-    version : meson.project_version(),
-    libraries : nnps_lib,
-    subdirs : meson.project_name(),
-)
+subdir('config')
