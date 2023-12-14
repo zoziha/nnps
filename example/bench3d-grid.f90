@@ -18,7 +18,7 @@ program main
     loop = 100
     allocate (loc(3, m))
     call randu(loc, -20.0_wp, 20.0_wp)
-    call nnps_grid%init(loc, m)
+    call nnps_grid%init(loc, [8, 100], m)
 
     call cpu_time(t1)
     call tmr%tic()

@@ -1,3 +1,4 @@
+!> 二维背景网格搜索
 !> 2D background grid method
 module nnps_grid2d_module
 
@@ -6,6 +7,7 @@ module nnps_grid2d_module
     use nnps_int_vector, only: int_vector, int_vector_finalizer
     use nnps_spatial_hashing, only: shash_tbl, shash_tbl_finalizer
     use nnps_math, only: distance2d, sqrt_eps
+    use, intrinsic :: iso_fortran_env, only: error_unit
 #ifndef SERIAL
     use omp_lib, only: omp_get_thread_num, omp_get_max_threads
 #endif
@@ -14,19 +16,21 @@ module nnps_grid2d_module
     private
     public :: nnps_grid2d, nnps_grid2d_finalizer
 
+    !> 二维背景网格搜索
     !> 2d grid
     !> @note pairs(threads_pairs)/shash_tbl are the No.1/No.2 memory consumers
     type nnps_grid2d
         real(wp), pointer :: loc(:, :)                              !! particle 2d coordinate
         type(shash_tbl) :: tbl                                      !! background grids hash table
         type(int_vector), private :: iks                            !! unique keys
+        integer :: m(2)                                             !! 粒子的平均粒子对数量区间
 
-#ifndef SERIAL
+#ifdef SERIAL
+        type(vector), private :: pairs                              !! pairs
+        type(int_vector), private :: idxs                           !! indexes
+#else
         type(vector), allocatable, private :: threads_pairs(:)      !! thread local pairs
         type(int_vector), allocatable, private :: threads_idxs(:)   !! thread local indexes
-#else
-        type(vector), private :: pairs      !! pairs
-        type(int_vector), private :: idxs   !! indexes
 #endif
     contains
         procedure :: init, query, storage
@@ -34,50 +38,32 @@ module nnps_grid2d_module
 
 contains
 
-    !> finalizer
-    pure subroutine nnps_grid2d_finalizer(self)
-        type(nnps_grid2d), intent(inout) :: self  !! nnps_grid2d
-
-        if (associated(self%loc)) nullify (self%loc)
-        call shash_tbl_finalizer(self%tbl)
-        call int_vector_finalizer(self%iks)
-
-#ifndef SERIAL
-        if (allocated(self%threads_pairs)) then
-            call vector_finalizer(self%threads_pairs)
-            deallocate (self%threads_pairs)
-        end if
-        if (allocated(self%threads_idxs)) then
-            call int_vector_finalizer(self%threads_idxs)
-            deallocate (self%threads_idxs)
-        end if
-#else
-        call vector_finalizer(self%pairs)
-        call int_vector_finalizer(self%idxs)
-#endif
-
-    end subroutine nnps_grid2d_finalizer
-
+    !> 初始化背景网格
     !> initialize
-    subroutine init(self, loc, n)
+    subroutine init(self, loc, m, n)
         class(nnps_grid2d), intent(inout) :: self               !! nnps_grid2d
         real(wp), dimension(:, :), intent(in), target :: loc    !! particle 2d coordinate
+        integer, intent(in) :: m(2)                             !! 粒子的平均粒子对数量区间
         integer, intent(in) :: n                                !! number of particles
+        integer :: thread_num
 
         self%loc => loc
-
-#ifndef SERIAL
-        allocate (self%threads_pairs(0:omp_get_max_threads() - 1), &  ! allocate by threads number
-                  self%threads_idxs(0:omp_get_max_threads() - 1))
-        call self%threads_pairs(:)%init(2, n)
+        self%m = m*n
+#ifdef SERIAL
+        thread_num = 0
+        call self%pairs%init(2, self%m(1))
 #else
-        call self%pairs%init(2, n)
+        thread_num = omp_get_max_threads() - 1
+        allocate (self%threads_pairs(0:thread_num), &           ! allocate by threads number
+                  self%threads_idxs(0:thread_num))
+        call self%threads_pairs(:)%init(2, self%m(1)/(thread_num + 1))
 #endif
 
         call self%tbl%allocate(m=n)
 
     end subroutine init
 
+    !> 构建背景网格与查询粒子对
     !> build and query
     subroutine query(self, radius, pairs, rdxs, n)
         class(nnps_grid2d), intent(inout), target :: self       !! nnps_grid2d
@@ -96,10 +82,10 @@ contains
         ik(3) = 1
         self%iks%len = 0
 
-        do i = 1, n  ! 一次查询，将所有粒子的位置信息存入哈希表
+        do i = 1, n                                             ! 一次查询，将所有粒子的位置信息存入哈希表
             ik(1:2) = ceiling(self%loc(:, i)/radius)
             call self%tbl%set(key=ik, value=i, istat=istat)
-            if (istat == 0) call self%iks%push_back_items(ik, 3)  ! collect unique keys
+            if (istat == 0) call self%iks%push_back_items(ik, 3)! collect unique keys
         end do
 
 #ifndef SERIAL
@@ -145,9 +131,15 @@ contains
         end associate
 
         if (size(self%threads_pairs) > 1) call self%threads_pairs(0)%merge(self%threads_pairs)
-        pairs => self%threads_pairs(0)%items(1:self%threads_pairs(0)%len*2)
-        rdxs => self%threads_pairs(0)%ritems(1:self%threads_pairs(0)%len*3)
 
+        associate (len => self%threads_pairs(0)%len)
+            if (len*2 > self%m(2)) then
+                write (error_unit, "(a)") "INFO: particle pairs exceed the maximum number"
+                stop 99
+            end if
+            pairs => self%threads_pairs(0)%items(1:len*2)
+            rdxs => self%threads_pairs(0)%ritems(1:len*3)
+        end associate
 #else
 
         self%pairs%len = 0
@@ -181,8 +173,14 @@ contains
             end do
         end associate
 
-        pairs => self%pairs%items(1:self%pairs%len*2)
-        rdxs => self%pairs%ritems(1:self%pairs%len*3)
+        associate (len => self%pairs%len)
+            if (len*2 > self%m(2)) then
+                write (error_unit, "(a)") "INFO: particle pairs exceed the maximum number"
+                stop 99
+            end if
+            pairs => self%pairs%items(1:len*2)
+            rdxs => self%pairs%ritems(1:len*3)
+        end associate
 
 #endif
 
@@ -257,5 +255,29 @@ contains
 #endif
 
     end function storage
+
+    !> finalizer
+    pure subroutine nnps_grid2d_finalizer(self)
+        type(nnps_grid2d), intent(inout) :: self  !! nnps_grid2d
+
+        if (associated(self%loc)) nullify (self%loc)
+        call shash_tbl_finalizer(self%tbl)
+        call int_vector_finalizer(self%iks)
+
+#ifndef SERIAL
+        if (allocated(self%threads_pairs)) then
+            call vector_finalizer(self%threads_pairs)
+            deallocate (self%threads_pairs)
+        end if
+        if (allocated(self%threads_idxs)) then
+            call int_vector_finalizer(self%threads_idxs)
+            deallocate (self%threads_idxs)
+        end if
+#else
+        call vector_finalizer(self%pairs)
+        call int_vector_finalizer(self%idxs)
+#endif
+
+    end subroutine nnps_grid2d_finalizer
 
 end module nnps_grid2d_module

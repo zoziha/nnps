@@ -35,14 +35,14 @@ contains
         integer :: thread_num
 
         self%loc => loc
-        self%m = m
+        self%m = m*n
 #ifdef SERIAL
         thread_num = 0
 #else
         thread_num = omp_get_max_threads() - 1
 #endif
         allocate (self%threads_pairs(0:thread_num))
-        call self%threads_pairs(:)%init(3, m(1)/(thread_num + 1))
+        call self%threads_pairs(:)%init(3, self%m(1)/(thread_num + 1))
 
     end subroutine init
 

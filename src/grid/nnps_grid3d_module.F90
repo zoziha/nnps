@@ -1,3 +1,4 @@
+!> 三维背景网格方法
 !> 3D background grid method
 module nnps_grid3d_module
 
@@ -6,6 +7,7 @@ module nnps_grid3d_module
     use nnps_int_vector, only: int_vector, int_vector_finalizer
     use nnps_spatial_hashing, only: shash_tbl, shash_tbl_finalizer
     use nnps_math, only: distance3d, sqrt_eps
+    use, intrinsic :: iso_fortran_env, only: error_unit
 #ifndef SERIAL
     use omp_lib, only: omp_get_thread_num, omp_get_max_threads
 #endif
@@ -20,13 +22,13 @@ module nnps_grid3d_module
         real(wp), pointer :: loc(:, :)                              !! particle 3d coordinate
         type(shash_tbl) :: tbl                                      !! background grids hash table
         type(int_vector), private :: iks                            !! unique keys
-
-#ifndef SERIAL
+        integer :: m(2)                                             !! 粒子的平均粒子对数量区间
+#ifdef SERIAL
+        type(vector), private :: pairs                              !! pairs
+        type(int_vector), private :: idxs                           !! indexes
+#else
         type(vector), allocatable, private :: threads_pairs(:)      !! thread local pairs
         type(int_vector), allocatable, private :: threads_idxs(:)   !! thread local indexes
-#else
-        type(vector), private :: pairs      !! pairs
-        type(int_vector), private :: idxs   !! indexes
 #endif
     contains
         procedure :: init, query, storage
@@ -59,25 +61,30 @@ contains
     end subroutine nnps_grid3d_finalizer
 
     !> initialize
-    subroutine init(self, loc, n)
+    subroutine init(self, loc, m, n)
         class(nnps_grid3d), intent(inout) :: self               !! nnps_grid3d
         real(wp), dimension(:, :), intent(in), target :: loc    !! particle 3d coordinate
+        integer, intent(in) :: m(2)                             !! 粒子的平均粒子对数量区间
         integer, intent(in) :: n                                !! number of particles
+        integer :: thread_num
 
         self%loc => loc
-
-#ifndef SERIAL
-        allocate (self%threads_pairs(0:omp_get_max_threads() - 1), &  ! allocate by threads number
-                  self%threads_idxs(0:omp_get_max_threads() - 1))
-        call self%threads_pairs(:)%init(3, n)
+        self%m = m*n
+#ifdef SERIAL
+        thread_num = 0
+        call self%pairs%init(3, self%m(1))
 #else
-        call self%pairs%init(3, n)
+        thread_num = omp_get_max_threads() - 1
+        allocate (self%threads_pairs(0:thread_num), &  ! allocate by threads number
+                  self%threads_idxs(0:thread_num))
+        call self%threads_pairs(:)%init(3, self%m(1)/(thread_num + 1))
 #endif
 
         call self%tbl%allocate(m=n)
 
     end subroutine init
 
+    !> 构建背景网格与查询粒子对
     !> query
     subroutine query(self, radius, pairs, rdxs, n)
         class(nnps_grid3d), intent(inout), target :: self       !! nnps_grid3d
@@ -95,10 +102,10 @@ contains
         call self%tbl%zeroing()
         self%iks%len = 0
 
-        do i = 1, n  !@todo: parallelize
+        do i = 1, n                                             !@todo: parallelize
             ik = ceiling(self%loc(:, i)/radius)
             call self%tbl%set(key=ik, value=i, istat=istat)
-            if (istat == 0) call self%iks%push_back_items(ik, 3)  ! collect unique keys
+            if (istat == 0) call self%iks%push_back_items(ik, 3)! collect unique keys
         end do
 
 #ifndef SERIAL
@@ -152,8 +159,14 @@ contains
 
         if (size(self%threads_pairs) > 1) call self%threads_pairs(0)%merge(self%threads_pairs)
 
-        pairs => self%threads_pairs(0)%items(1:self%threads_pairs(0)%len*2)
-        rdxs => self%threads_pairs(0)%ritems(1:self%threads_pairs(0)%len*4)
+        associate (len => self%threads_pairs(0)%len)
+            if (len*2 > self%m(2)) then
+                write (error_unit, "(a)") "INFO: particle pairs exceed the maximum number"
+                stop 99
+            end if
+            pairs => self%threads_pairs(0)%items(1:len*2)
+            rdxs => self%threads_pairs(0)%ritems(1:len*4)
+        end associate
 
 #else
 
@@ -195,8 +208,14 @@ contains
             end do
         end associate
 
-        pairs => self%pairs%items(1:self%pairs%len*2)
-        rdxs => self%pairs%ritems(1:self%pairs%len*4)
+        associate (len => self%pairs%len)
+            if (len*2 > self%m(2)) then
+                write (error_unit, "(a)") "INFO: particle pairs exceed the maximum number"
+                stop 99
+            end if
+            pairs => self%pairs%items(1:len*2)
+            rdxs => self%pairs%ritems(1:len*4)
+        end associate
 
 #endif
 

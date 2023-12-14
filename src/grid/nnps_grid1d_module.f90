@@ -1,3 +1,4 @@
+!> 1维背景网格方法
 !> 1D background grid method
 module nnps_grid1d_module
 
@@ -5,17 +6,19 @@ module nnps_grid1d_module
     use nnps_vector, only: vector
     use nnps_int_vector, only: int_vector
     use nnps_math, only: distance1d, sqrt_eps
+    use, intrinsic :: iso_fortran_env, only: error_unit
     implicit none
 
     private
     public :: nnps_grid1d
 
+    !> 一维背景网格类型
     !> 1D grid
     type nnps_grid1d
-        real(wp), pointer :: loc(:)  !! particle 1d coordinate
-        type(int_vector), allocatable :: grids(:)  !! background grids
-        type(vector) :: pairs  !! particle pairs
-        real(wp), private :: min, max, radius
+        real(wp), pointer :: loc(:)                 !! particle 1d coordinate
+        type(int_vector), allocatable :: grids(:)   !! background grids
+        type(vector) :: pairs                       !! particle pairs
+        real(wp), private :: min, max, radius       !! 
     contains
         procedure :: init, build, query
         procedure, private :: check

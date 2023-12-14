@@ -34,8 +34,8 @@ contains
         integer, intent(in) :: n                    !! 粒子数量, n = size(loc)
 
         self%loc => loc
-        self%m = m
-        call self%pairs%init(1, m(1))
+        self%m = m*n
+        call self%pairs%init(1, self%m(1))
 
     end subroutine init
 
