@@ -12,6 +12,11 @@ program example_grid2d
 
     call nnps%init(loc, m=[8, 100], n=4)
     call nnps%query(0.6_wp, pairs, rdxs, n=4)
+    loc(:, 1) = 10.0_wp
+    call nnps%query(0.6_wp, pairs, rdxs, n=4)
+    call nnps%recycle()
+    loc(:, 1) = [0.0_wp, 1.0_wp]
+    call nnps%query(0.6_wp, pairs, rdxs, n=4)
 
     print *, '*** grid find (2D)'
     call display(pairs, 'pairs index:', brief=.false.)

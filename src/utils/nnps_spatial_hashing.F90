@@ -1,7 +1,8 @@
+!> 散列哈希表
 !> spatial Hashing
 module nnps_spatial_hashing
 
-    use nnps_key_value, only: key_values, key_values_finalizer
+    use nnps_key_value, only: key_values, key_values_finalizer, key_values_recycle => recycle
     implicit none
 
     private
@@ -11,8 +12,7 @@ module nnps_spatial_hashing
     type shash_tbl
         type(key_values), allocatable :: buckets(:)  !! Buckets
     contains
-        procedure :: allocate => shash_tbl_allocate, zeroing, set, hash, &
-            storage, activated_buckets
+        procedure :: alloc, zeroing, set, hash, recycle
     end type shash_tbl
 
 contains
@@ -27,14 +27,14 @@ contains
 
     end function hash
 
-    !> Allocate
-    pure subroutine shash_tbl_allocate(self, m)
+    !> 分配哈希桶数量
+    pure subroutine alloc(self, m)
         class(shash_tbl), intent(inout) :: self
         integer, intent(in) :: m
 
         allocate (self%buckets(0:m - 1))
 
-    end subroutine shash_tbl_allocate
+    end subroutine alloc
 
     !> Clean up
     pure subroutine shash_tbl_finalizer(self)
@@ -65,34 +65,13 @@ contains
 
     end subroutine set
 
-    !> Storage
-    integer function storage(self)
-        class(shash_tbl), intent(in) :: self
+    !> 回收内存
+    pure subroutine recycle(self)
+        class(shash_tbl), intent(inout) :: self
         integer :: i
 
-        storage = storage_size(self%buckets)*size(self%buckets)
-        do i = 0, size(self%buckets) - 1
-            storage = storage + self%buckets(i)%storage()
-        end do
+        call key_values_recycle(self%buckets)
 
-    end function storage
-
-    !> Get number of activated buckets (activated buckets, recyclable buckets)
-    function activated_buckets(self)
-        class(shash_tbl), intent(in) :: self
-        integer, dimension(2) :: activated_buckets
-        integer :: i
-
-        activated_buckets = 0
-        do i = 0, size(self%buckets) - 1
-            if (allocated(self%buckets(i)%items)) then
-                activated_buckets(1) = activated_buckets(1) + 1
-                if (all(self%buckets(i)%items(:)%value%len == 0)) then
-                    activated_buckets(2) = activated_buckets(2) + 1
-                end if
-            end if
-        end do
-
-    end function activated_buckets
+    end subroutine recycle
 
 end module nnps_spatial_hashing

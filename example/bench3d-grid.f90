@@ -31,8 +31,6 @@ program main
     call cpu_time(t2)
     call display(t2 - t1, 'cpu_time:', inline=.true.)
     call display(pairs, 'pairs:')
-    call display(real(nnps_grid%storage())/(8*1024*1024), "storage (tbl/all):")
-    call display(nnps_grid%tbl%activated_buckets(), "activated_buckets (activated/recyclable):")
 
 end program main
 !>  *** grid3d ***
@@ -44,3 +42,8 @@ end program main
 !>  2.112E+01,  4.567E+01
 !> [vector: 2] activated_buckets (activated/recyclable):
 !> 50095, 0
+!>  *** grid3d ***
+!> [scalar] time: '00:00:30.047' (410ms/timestep with 130k particles, 2.0GHz[R5-2500U], 1 core, 3D)
+!> [scalar] cpu_time:  3.003E+01
+!> [vector: 1076996] pairs:
+!> 1, 107417, 1, ... 115276

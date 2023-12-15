@@ -5,38 +5,26 @@ module nnps_key_value
     implicit none
 
     private
-    public :: key_values, key_values_finalizer
+    public :: key_values, key_values_finalizer, recycle
 
+    integer, parameter :: huge_value = huge(0)      !! 最大值, 用于标记 (一般不可能有粒子进入 huge 对应的网格)
+
+    !> 键值对
     !> key-value pair
     type key_value
-        integer :: key(3)  !! key
-        type(int_vector) :: value  !! value
+        integer :: key(3)           !! key
+        type(int_vector) :: value   !! value
     end type key_value
 
     !> key-value pairs
     type key_values
-        type(key_value), allocatable :: items(:)  !! key-value pair
+        type(key_value), allocatable :: items(:)    !! key-value pair
+        logical :: flag = .false.                   !! 是否已被回收, 存在惰性空间
     contains
-        procedure :: push_back, get_value, zeroing, storage!, clear
+        procedure :: push_back, get_value, zeroing
     end type key_values
 
 contains
-
-    !> storage
-    integer function storage(self)
-        class(key_values), intent(in) :: self
-        integer :: i
-
-        if (allocated(self%items)) then
-            storage = storage_size(self%items)*size(self%items)
-            do i = 1, size(self%items)
-                storage = storage + self%items(i)%value%storage()
-            end do
-        else
-            storage = 0
-        end if
-
-    end function storage
 
     !> finalizer
     elemental subroutine key_value_finalizer(self)
@@ -76,6 +64,7 @@ contains
         integer :: i
 
         if (allocated(self%items)) then
+            ! 往活跃空间中插入
             do i = 1, size(self%items)
                 if (all(self%items(i)%key == key)) then  ! TODO: 耗时
                     call self%items(i)%value%push_back(value)
@@ -87,9 +76,22 @@ contains
                     return
                 end if
             end do
+            ! 往惰性空间中插入
+            if (self%flag) then
+                do i = 1, size(self%items)
+                    if (all(self%items(i)%key == huge_value)) then
+                        self%items(i) = key_value_constructor(key, value)  ! 惰性空间被复用
+                        istat = 0
+                        return
+                    end if
+                end do
+                self%flag = .false.
+            end if
+            ! 开辟新空间并插入
             self%items = [self%items, key_value_constructor(key, value)]
             istat = 0
         else
+            ! 初始化空间并插入
             allocate (self%items(1), source=key_value_constructor(key, value))
             istat = 0
         end if
@@ -122,5 +124,25 @@ contains
         end do
 
     end subroutine get_value
+
+    !> 空键值对回收机制: 添加标记 @note 应该低频率实施该回收过程
+    elemental subroutine recycle(self)
+        type(key_values), intent(inout) :: self
+        integer :: i
+
+        if (.not. allocated(self%items)) return
+        if (size(self%items) > 10) then                     ! 回收较大桶的内存
+            deallocate (self%items)
+            return
+        end if
+
+        do i = 1, size(self%items)
+            if (self%items(i)%value%len == 0) then
+                self%items(i)%key = huge_value              ! 使用极大值标记空键值对
+                if (.not. self%flag) self%flag = .true.
+            end if
+        end do
+
+    end subroutine recycle
 
 end module nnps_key_value

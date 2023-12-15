@@ -14,7 +14,7 @@ module nnps_grid2d_module
     implicit none
 
     private
-    public :: nnps_grid2d, nnps_grid2d_finalizer
+    public :: nnps_grid2d
 
     !> 二维背景网格搜索
     !> 2d grid
@@ -33,7 +33,7 @@ module nnps_grid2d_module
         type(int_vector), allocatable, private :: threads_idxs(:)   !! thread local indexes
 #endif
     contains
-        procedure :: init, query, storage
+        procedure :: init, query, recycle, destroy
     end type nnps_grid2d
 
 contains
@@ -59,7 +59,7 @@ contains
         call self%threads_pairs(:)%init(2, self%m(1)/(thread_num + 1))
 #endif
 
-        call self%tbl%allocate(m=n)
+        call self%tbl%alloc(m=n)
 
     end subroutine init
 
@@ -231,34 +231,17 @@ contains
 
     end subroutine query
 
-    !> storage in bits (shash_tbl/all)
-    function storage(self)
-        class(nnps_grid2d), intent(in) :: self  !! nnps_grid2d
-        integer, dimension(2) :: storage
-        integer :: i
+    !> 回收惰性空间: 标记
+    pure subroutine recycle(self)
+        class(nnps_grid2d), intent(inout) :: self
 
-        storage(1) = self%tbl%storage()
-#ifndef SERIAL
-        storage(2) = storage_size(self) + storage(1) + storage_size(self%loc) + &
-                     self%iks%storage()
+        call self%tbl%recycle()
 
-        do i = 0, size(self%threads_pairs) - 1
-            storage(2) = storage(2) + self%threads_pairs(i)%storage() + &
-                         self%threads_idxs(i)%storage() + &
-                         storage_size(self%threads_pairs(i)) + &
-                         storage_size(self%threads_idxs(i))
-        end do
-#else
-        storage(2) = storage_size(self) + storage(1) + storage_size(self%loc) + &
-                     self%iks%storage() + storage_size(self%pairs) + &
-                     self%idxs%storage()
-#endif
-
-    end function storage
+    end subroutine recycle
 
     !> finalizer
-    pure subroutine nnps_grid2d_finalizer(self)
-        type(nnps_grid2d), intent(inout) :: self  !! nnps_grid2d
+    pure subroutine destroy(self)
+        class(nnps_grid2d), intent(inout) :: self  !! nnps_grid2d
 
         if (associated(self%loc)) nullify (self%loc)
         call shash_tbl_finalizer(self%tbl)
@@ -278,6 +261,6 @@ contains
         call int_vector_finalizer(self%idxs)
 #endif
 
-    end subroutine nnps_grid2d_finalizer
+    end subroutine destroy
 
 end module nnps_grid2d_module

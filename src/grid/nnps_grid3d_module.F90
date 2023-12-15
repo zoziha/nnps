@@ -14,7 +14,7 @@ module nnps_grid3d_module
     implicit none
 
     private
-    public :: nnps_grid3d, nnps_grid3d_finalizer
+    public :: nnps_grid3d
 
     !> 3d grid
     !> @note pairs(threads_pairs)/shash_tbl are the No.1/No.2 memory consumers
@@ -31,14 +31,14 @@ module nnps_grid3d_module
         type(int_vector), allocatable, private :: threads_idxs(:)   !! thread local indexes
 #endif
     contains
-        procedure :: init, query, storage
+        procedure :: init, query, recycle, destroy
     end type nnps_grid3d
 
 contains
 
-    !> finalizer
-    pure subroutine nnps_grid3d_finalizer(self)
-        type(nnps_grid3d), intent(inout) :: self  !! nnps_grid3d
+    !> 回收全部空间: 当内存被大量使用时, 可以调用此函数释放内存, 并重新初始化
+    pure subroutine destroy(self)
+        class(nnps_grid3d), intent(inout) :: self  !! nnps_grid3d
 
         if (associated(self%loc)) nullify (self%loc)
         call shash_tbl_finalizer(self%tbl)
@@ -58,7 +58,7 @@ contains
         call int_vector_finalizer(self%idxs)
 #endif
 
-    end subroutine nnps_grid3d_finalizer
+    end subroutine destroy
 
     !> initialize
     subroutine init(self, loc, m, n)
@@ -80,7 +80,7 @@ contains
         call self%threads_pairs(:)%init(3, self%m(1)/(thread_num + 1))
 #endif
 
-        call self%tbl%allocate(m=n)
+        call self%tbl%alloc(m=n)
 
     end subroutine init
 
@@ -173,7 +173,7 @@ contains
         self%pairs%len = 0
         associate (iks => self%iks%items)
             do i = 1, self%iks%len, 3
-                ijk(:, 1) = iks(i:i + 2) - 1  ! 3D L style, 13 neighbors (9 + 4)
+                ijk(:, 1) = iks(i:i + 2) - 1                    ! 3D L style, 13 neighbors (9 + 4)
                 ijk(:, 2) = [iks(i), iks(i + 1:i + 2) - 1]
                 ijk(:, 3) = [iks(i) + 1, iks(i + 1:i + 2) - 1]
                 ijk(:, 4) = [iks(i) - 1, iks(i + 1), iks(i + 2) - 1]
@@ -266,29 +266,12 @@ contains
 
     end subroutine query
 
-    !> storage in bits (shash_tbl/all)
-    function storage(self)
-        class(nnps_grid3d), intent(in) :: self  !! nnps_grid3d
-        integer, dimension(2) :: storage
-        integer :: i
+    !> 回收惰性空间: 标记
+    pure subroutine recycle(self)
+        class(nnps_grid3d), intent(inout) :: self
 
-        storage(1) = self%tbl%storage()
-#ifndef SERIAL
-        storage(2) = storage_size(self) + storage(1) + storage_size(self%loc) + &
-                     self%iks%storage()
+        call self%tbl%recycle()
 
-        do i = 0, size(self%threads_pairs) - 1
-            storage(2) = storage(2) + self%threads_pairs(i)%storage() + &
-                         self%threads_idxs(i)%storage() + &
-                         storage_size(self%threads_pairs(i)) + &
-                         storage_size(self%threads_idxs(i))
-        end do
-#else
-        storage(2) = storage_size(self) + storage(1) + storage_size(self%loc) + &
-                     self%iks%storage() + storage_size(self%pairs) + &
-                     self%idxs%storage()
-#endif
-
-    end function storage
+    end subroutine recycle
 
 end module nnps_grid3d_module

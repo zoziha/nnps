@@ -11,7 +11,7 @@ module nnps_int_vector
         integer :: len = 0  !! true vector length
         integer, allocatable :: items(:)  !! integer vector
     contains
-        procedure :: push_back, storage, push_back_items
+        procedure :: push_back, push_back_items
         procedure, private :: extend
     end type int_vector
 
@@ -63,14 +63,6 @@ contains
         self%items = [self%items, tmp]  ! address of self%items may not be changed, which is good
 
     end subroutine extend
-
-    !> Storage
-    pure integer function storage(self)
-        class(int_vector), intent(in) :: self
-
-        storage = storage_size(self%items)*size(self%items)
-
-    end function storage
 
     !> 向量清空
     elemental subroutine int_vector_finalizer(self)

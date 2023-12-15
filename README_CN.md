@@ -1,6 +1,6 @@
 <div align='center'>
 
-# 近邻粒子搜索
+# 近邻粒子搜索算法
 
 ![NNPS](https://img.shields.io/badge/NNPS-v1.3.0-blueviolet)
 ![语言](https://img.shields.io/badge/-Fortran-734f96?logo=fortran&logoColor=white)

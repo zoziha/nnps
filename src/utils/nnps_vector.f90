@@ -17,7 +17,7 @@ module nnps_vector
         real(wp), allocatable :: ritems(:)  !! 实型数组
     contains
         procedure :: init
-        procedure :: push, merge, storage
+        procedure :: push, merge
         procedure, private :: extend
     end type vector
 
@@ -96,15 +96,6 @@ contains
         self%len = idx(size(that))
 
     end subroutine merge
-
-    !> Storage size
-    pure integer function storage(self)
-        class(vector), intent(in) :: self
-
-        storage = storage_size(self%items)*size(self%items) + &
-                  storage_size(self%ritems)*size(self%ritems)
-
-    end function storage
 
     !> 向量清空
     elemental subroutine vector_finalizer(self)
