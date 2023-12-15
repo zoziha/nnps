@@ -23,7 +23,6 @@ module nnps_grid2d_module
         real(wp), pointer :: loc(:, :)                              !! particle 2d coordinate
         type(shash_tbl) :: tbl                                      !! background grids hash table
         type(int_vector), private :: iks                            !! unique keys
-        integer :: m(2)                                             !! 粒子的平均粒子对数量区间
 
 #ifdef SERIAL
         type(vector), private :: pairs                              !! pairs
@@ -40,23 +39,21 @@ contains
 
     !> 初始化背景网格
     !> initialize
-    subroutine init(self, loc, m, n)
+    subroutine init(self, loc, n)
         class(nnps_grid2d), intent(inout) :: self               !! nnps_grid2d
         real(wp), dimension(:, :), intent(in), target :: loc    !! particle 2d coordinate
-        integer, intent(in) :: m(2)                             !! 粒子的平均粒子对数量区间
         integer, intent(in) :: n                                !! number of particles
         integer :: thread_num
 
         self%loc => loc
-        self%m = m*n
 #ifdef SERIAL
         thread_num = 0
-        call self%pairs%init(2, self%m(1))
+        call self%pairs%init(2, n)
 #else
         thread_num = omp_get_max_threads() - 1
         allocate (self%threads_pairs(0:thread_num), &           ! allocate by threads number
                   self%threads_idxs(0:thread_num))
-        call self%threads_pairs(:)%init(2, self%m(1)/(thread_num + 1))
+        call self%threads_pairs(:)%init(2, n)
 #endif
 
         call self%tbl%alloc(m=n)
@@ -133,10 +130,6 @@ contains
         if (size(self%threads_pairs) > 1) call self%threads_pairs(0)%merge(self%threads_pairs)
 
         associate (len => self%threads_pairs(0)%len)
-            if (len*2 > self%m(2)) then
-                write (error_unit, "(a)") "INFO: particle pairs exceed the maximum number"
-                stop 99
-            end if
             pairs => self%threads_pairs(0)%items(1:len*2)
             rdxs => self%threads_pairs(0)%ritems(1:len*3)
         end associate
@@ -174,10 +167,6 @@ contains
         end associate
 
         associate (len => self%pairs%len)
-            if (len*2 > self%m(2)) then
-                write (error_unit, "(a)") "INFO: particle pairs exceed the maximum number"
-                stop 99
-            end if
             pairs => self%pairs%items(1:len*2)
             rdxs => self%pairs%ritems(1:len*3)
         end associate

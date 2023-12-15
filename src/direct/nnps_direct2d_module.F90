@@ -19,7 +19,6 @@ module nnps_direct2d_module
     type nnps_direct2d
         real(wp), pointer :: loc(:, :)                          !! particle 2d coordinate
         type(vector), allocatable, private :: threads_pairs(:)  !! thread local pairs
-        integer :: m(2)                                         !! 粒子的平均粒子对数量区间
     contains
         procedure :: init, query
     end type nnps_direct2d
@@ -28,22 +27,20 @@ contains
 
     !> 初始化二维直接搜索
     !> initialize
-    subroutine init(self, loc, m, n)
+    subroutine init(self, loc, n)
         class(nnps_direct2d), intent(inout), target :: self
         real(wp), intent(in), target :: loc(:, :)               !! 粒子坐标 (地址)
-        integer, intent(in) :: m(2)                             !! 粒子的平均粒子对数量区间
         integer, intent(in) :: n                                !! 粒子数量, n = size(loc, 2)
         integer :: thread_num
 
         self%loc => loc
-        self%m = m*n
 #ifdef SERIAL
         thread_num = 0
 #else
         thread_num = omp_get_max_threads() - 1
 #endif
         allocate (self%threads_pairs(0:thread_num))
-        call self%threads_pairs(:)%init(2, self%m(1)/(thread_num + 1))
+        call self%threads_pairs(:)%init(2, n)
 
     end subroutine init
 
@@ -78,11 +75,6 @@ contains
 #endif
 
         associate (len => self%threads_pairs(0)%len)
-
-            if (len*2 > self%m(2)) then
-                write (error_unit, "(a)") "INFO: particle pairs exceed the maximum number"
-                stop 99
-            end if
 
             pairs => self%threads_pairs(0)%items(1:len*2)
             rdxs => self%threads_pairs(0)%ritems(1:len*3)

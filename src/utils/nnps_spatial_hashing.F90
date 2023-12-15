@@ -68,7 +68,6 @@ contains
     !> 回收内存
     pure subroutine recycle(self)
         class(shash_tbl), intent(inout) :: self
-        integer :: i
 
         call key_values_recycle(self%buckets)
 

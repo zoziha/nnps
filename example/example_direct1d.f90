@@ -10,7 +10,7 @@ program example_direct1d
     integer, pointer :: pairs(:)
     real(wp), pointer :: rdxs(:)
 
-    call nnps%init(loc, m=[8, 100], n=n)
+    call nnps%init(loc, n=n)
     call nnps%query(0.6_wp, pairs, rdxs, n=n)
 
     print *, '*** direct find (1D)'

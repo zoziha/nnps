@@ -19,7 +19,6 @@ module nnps_direct3d_module
     type nnps_direct3d
         real(wp), pointer :: loc(:, :)                          !! particle 3d coordinate
         type(vector), allocatable, private :: threads_pairs(:)  !! thread local pairs
-        integer :: m(2)
     contains
         procedure :: init, query
     end type nnps_direct3d
@@ -27,22 +26,20 @@ module nnps_direct3d_module
 contains
 
     !> initialize
-    subroutine init(self, loc, m, n)
+    subroutine init(self, loc, n)
         class(nnps_direct3d), intent(inout) :: self
         real(wp), intent(in), target :: loc(:, :)
-        integer, intent(in) :: m(2)                             !! 粒子的平均粒子对数量区间
         integer, intent(in) :: n                                !! 粒子数量, n = size(loc, 2)
         integer :: thread_num
 
         self%loc => loc
-        self%m = m*n
 #ifdef SERIAL
         thread_num = 0
 #else
         thread_num = omp_get_max_threads() - 1
 #endif
         allocate (self%threads_pairs(0:thread_num))
-        call self%threads_pairs(:)%init(3, self%m(1)/(thread_num + 1))
+        call self%threads_pairs(:)%init(3, n)
 
     end subroutine init
 
@@ -77,15 +74,8 @@ contains
 #endif
 
         associate (len => self%threads_pairs(0)%len)
-
-            if (len*2 > self%m(2)) then
-                write (error_unit, "(a)") "INFO: particle pairs exceed the maximum number"
-                stop 99
-            end if
-
             pairs => self%threads_pairs(0)%items(1:len*2)
             rdxs => self%threads_pairs(0)%ritems(1:len*4)
-
         end associate
 
     end subroutine query

@@ -16,9 +16,6 @@ module nnps_direct1d_module
     type nnps_direct1d
         real(wp), pointer :: loc(:)                 !! 粒子坐标 (指针), particle 1d coordinate
         type(vector) :: pairs                       !! 粒子对, partcile pairs
-        integer :: m(2)                             !! 粒子交互粒子对数量 (不含自身) 区间 [m(1), m(2)], m 的存在有利于内存合理分配和及时发出错误提示
-                                                    !! @note 数据容器依据 m(1) 分配初始空间, 依据 m(2) 判断粒子对计算是否发生异常
-                                                    !! 当粒子的平均粒子对数量大于 m(2) 时, 说明粒子发生坍塌异常, 将抛出异常 "INFO: particle pairs exceed the maximum number"
     contains
         procedure :: init, query
     end type nnps_direct1d
@@ -27,15 +24,13 @@ contains
 
     !> 初始化一维直接搜索
     !> initialize
-    subroutine init(self, loc, m, n)
+    subroutine init(self, loc, n)
         class(nnps_direct1d), intent(inout) :: self
         real(wp), intent(in), target :: loc(:)      !! 粒子坐标 (地址)
-        integer, intent(in) :: m(2)                 !! 粒子的平均粒子对 (不含自身)
         integer, intent(in) :: n                    !! 粒子数量, n = size(loc)
 
         self%loc => loc
-        self%m = m*n
-        call self%pairs%init(1, self%m(1))
+        call self%pairs%init(1, n)
 
     end subroutine init
 
@@ -63,11 +58,6 @@ contains
 
                 end do
             end do
-
-            if (len*2 > self%m(2)) then
-                write (error_unit, "(a)") "INFO: particle pairs exceed the maximum number"
-                stop 99
-            end if
 
             pairs => self%pairs%items(1:len*2)
             rdxs => self%pairs%ritems(1:len*2)

@@ -18,7 +18,7 @@ program main
     loop = 100
     allocate (loc(2, m))
     call randu(loc, -100.0_wp, 100.0_wp)
-    call nnps_grid%init(loc, m=[8, 100], n=m)
+    call nnps_grid%init(loc, n=m)
 
     call cpu_time(t1)
     call tmr%tic()
@@ -34,10 +34,10 @@ program main
 
 end program main
 !>  *** grid2d *** (i5-8250U, 1 core, 2D)
-!> [scalar] time: '00:00: 7.922'
-!> [scalar] cpu_time:  2.239E+01
-!> [vector: 1320144] pairs:
-!> 26, 60852, 26, ... 83670
+!> [scalar] time: '00:00: 8.094'
+!> [scalar] cpu_time:  8.094E+00
+!> [vector: 1320832] pairs:
+!> 1, 41589, 1, ... 53742
 !>  *** grid2d *** (R5-2500U, 1 core, 2D)
 !> [scalar] time: '00:00:17.219'
 !> [scalar] cpu_time:  1.716E+01

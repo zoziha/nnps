@@ -18,7 +18,7 @@ program main
     loop = 100
     allocate (loc(3, m))
     call randu(loc, -20.0_wp, 20.0_wp)
-    call nnps_grid%init(loc, [8, 100], m)
+    call nnps_grid%init(loc, m)
 
     call cpu_time(t1)
     call tmr%tic()
@@ -38,10 +38,6 @@ end program main
 !> [scalar] cpu_time:  1.864E+01
 !> [vector: 1073602] pairs:
 !> 1, 37623, 1, ... 62281
-!> [vector: 2] storage (tbl/all):
-!>  2.112E+01,  4.567E+01
-!> [vector: 2] activated_buckets (activated/recyclable):
-!> 50095, 0
 !>  *** grid3d ***
 !> [scalar] time: '00:00:30.047' (410ms/timestep with 130k particles, 2.0GHz[R5-2500U], 1 core, 3D)
 !> [scalar] cpu_time:  3.003E+01
