@@ -16,9 +16,6 @@ NNPS 方案在 CFD 粒子法中的实践。
 3. 高效灵活;
 4. 仅实施必要的计算, 不引入不必要的CPU计算换时间。
 
-TODO:
-1. 背景网格结构回收规则。
-
 ## 使用方法
 
 仅支持 [FPM]((https://github.com/fortran-lang/fpm))/Meson/Visual-Studio、
@@ -37,6 +34,16 @@ nnps = { git = "https://gitee.com/zoziha/nnps" }
 ```sh
 fpm run --flag '/DSERIAL' --profile release --example --all --compiler ifort
 ```
+
+Windows 10, R5-2500U, 1 Core, Release Mode:
+
+|编译器|选项|grid2d(s)|grid3d(s)|
+|:-:|:-:|:-:|:-:|
+|gfortran||12.031|30.297|
+|ifort|/heap-arrays:0|36.515|77.784|
+|ifx|/heap-arrays:0|37.021|-|
+
+OneAPI Fortran 在开启标准语义后性能下降，且它对复杂派生类型的性能支撑一般，GFortran 取得头筹, 当然差一倍的性能差距是可以接受的。
 
 ### 并行
 

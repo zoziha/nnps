@@ -8,9 +8,6 @@ copyright = "Copyright 2021~2023, ZUO Zhihua"
 [build]
 auto-examples = true
 
-[dependencies]
-openmp = "*"
-
 [dev-dependencies]
 test-drive = { git = "https://gitee.com/fortran-base/test-drive", tag = "v0.4.0" }
 display = { git = "https://gitee.com/zoziha/display" }
@@ -20,6 +17,9 @@ timer = { git = "https://gitee.com/zoziha/timer" }
 [install]
 library = true
 
+[dependencies]
+# openmp = "*"
+
 [preprocess.cpp]
 # 取消注释以启用串行版本
-# macros = ["SERIAL"]
+macros = ["SERIAL"]
