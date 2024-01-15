@@ -39,10 +39,11 @@ contains
 
     !> 初始化背景网格
     !> initialize
-    subroutine init(self, loc, n)
+    subroutine init(self, loc, n, load_factor)
         class(nnps_grid2d), intent(inout) :: self               !! nnps_grid2d
         real(wp), dimension(:, :), intent(in), target :: loc    !! particle 2d coordinate
         integer, intent(in) :: n                                !! number of particles
+        real(wp), intent(in), optional :: load_factor           !! 负载因子, 默认值为 1.0
         integer :: thread_num
 
         self%loc => loc
@@ -56,7 +57,11 @@ contains
         call self%threads_pairs(:)%init(2, n)
 #endif
 
-        call self%tbl%alloc(m=n)
+        if (present(load_factor)) then
+            call self%tbl%alloc(m=int(n/load_factor))
+        else
+            call self%tbl%alloc(m=n)
+        end if
 
     end subroutine init
 
